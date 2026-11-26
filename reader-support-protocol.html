@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f3ee">
+  <title>The Reader-Support Protocol</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: #20352e;
+      background: #f4f3ee;
+      --ink: #20352e;
+      --muted: #53685f;
+      --line: #d2ddd4;
+      --green: #236047;
+      --gold: #8a5913;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; line-height: 1.6; }
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+    a { color: var(--green); text-underline-offset: 3px; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+      outline: 3px solid #ba7918; outline-offset: 3px;
+    }
+    .page { max-width: 1480px; margin: auto; padding: 30px clamp(16px, 4vw, 56px) 50px; }
+    .eyebrow { margin: 0 0 10px; font-size: .75rem; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+    .hero { display: grid; grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr); gap: 32px; padding: 28px 0 32px; }
+    h1 { font-size: clamp(2.2rem, 5vw, 4rem); letter-spacing: -.05em; line-height: 1.03; margin: 0; max-width: 780px; }
+    .intro { font-size: 1.08rem; color: var(--muted); max-width: 740px; margin: 20px 0 0; }
+    .principle { padding: 23px; border: 1px solid var(--line); border-radius: 16px; background: #e6eee5; align-self: center; }
+    .principle p { margin: 8px 0 0; font-size: .88rem; }
+    .principle strong { font-size: 1.1rem; }
+    .navigation { display: flex; flex-wrap: wrap; gap: 10px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .navigation a { padding: 8px 13px; background: white; border: 1px solid var(--line); border-radius: 8px; text-decoration: none; font-size: .87rem; font-weight: 650; }
+    section { scroll-margin-top: 18px; margin-top: 36px; }
+    .section-head { display: flex; justify-content: space-between; align-items: start; gap: 20px; margin-bottom: 16px; }
+    h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); margin: 0; letter-spacing: -.025em; line-height: 1.2; }
+    h3 { font-size: 1rem; margin: 0 0 8px; }
+    .subtitle { color: var(--muted); margin: 8px 0 0; max-width: 860px; font-size: .9rem; }
+    .panel { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+    .taxonomy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .taxonomy .panel { border-top: 4px solid #64857b; }
+    .taxonomy .panel:nth-child(2) { border-top-color: #a17b39; }
+    .taxonomy .panel:nth-child(3) { border-top-color: #936d8e; }
+    .taxonomy p { font-size: .88rem; margin: 0; color: var(--muted); }
+    .phase-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+    .phase-strip a { text-decoration: none; padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .phase-strip b { display: block; font-size: 1rem; }
+    .phase-strip span { font-size: .8rem; color: var(--muted); }
+    .toolbar { display: grid; grid-template-columns: 1.2fr 1fr 1.3fr; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #eaf0e8; }
+    label { display: block; font-weight: 650; font-size: .82rem; }
+    select, input { display: block; width: 100%; margin-top: 5px; padding: 9px; border: 1px solid #aebfb4; border-radius: 7px; color: var(--ink); background: #fff; min-width: 0; }
+    .matrix-layout { display: grid; grid-template-columns: minmax(0, 1fr) 335px; align-items: start; gap: 18px; margin-top: 18px; }
+    .matrix-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    table { border-collapse: collapse; width: 100%; min-width: 700px; font-size: .8rem; }
+    caption { text-align: left; padding: 14px 16px; color: var(--muted); border-bottom: 1px solid var(--line); }
+    th, td { border-bottom: 1px solid #e6eae5; padding: 5px; vertical-align: middle; }
+    thead th { background: #e9f0e9; color: var(--ink); text-align: center; }
+    thead th:first-child { text-align: left; padding-left: 14px; }
+    tbody th { font-weight: 500; text-align: left; padding-left: 10px; width: 42%; }
+    td { text-align: center; }
+    .phase-row th { background: #f1f3ed; padding: 8px 14px; font-size: .73rem; font-weight: 750; text-transform: uppercase; letter-spacing: .09em; }
+    .row-button { border: 0; border-radius: 6px; background: transparent; color: var(--ink); text-align: left; padding: 7px 4px; width: 100%; font-size: .79rem; line-height: 1.35; }
+    .row-button:hover { background: #eaf1e9; }
+    tr[data-selected="true"] { background: #f3f7ef; }
+    tr[data-selected="true"] .row-button { color: #174d35; font-weight: 700; }
+    .relation { border: 1px solid transparent; border-radius: 6px; width: 34px; height: 34px; font-size: 1.1rem; background: transparent; color: #397158; }
+    .relation[data-strength="2"] { background: #e4f0e4; color: #23583a; }
+    .relation:hover { border-color: #759984; }
+    .column-button { border: 0; background: transparent; padding: 7px 1px; border-radius: 5px; color: #224e3d; font-weight: 750; font-size: .75rem; }
+    .column-button[aria-pressed="true"] { background: #246045; color: #fff; padding: 7px 5px; }
+    .detail { position: sticky; top: 16px; border-top: 4px solid #64857b; }
+    .detail .eyebrow { color: #47725c; font-size: .7rem; }
+    .detail h3 { font-size: 1.15rem; line-height: 1.3; }
+    .detail dl { margin: 16px 0 0; }
+    .detail dt { font-weight: 750; font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; margin-top: 17px; }
+    .detail dd { margin: 4px 0 0; color: var(--muted); font-size: .85rem; }
+    .relationship-note { margin-top: 17px; padding: 12px; border: 1px solid #c0d3c2; border-radius: 8px; background: #eef5e9; font-size: .83rem; }
+    .relationship-note p { margin: 4px 0 0; }
+    .counts { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 12px 0; font-size: .8rem; color: var(--muted); }
+    .button { padding: 8px 12px; border: 1px solid #9fb6a7; border-radius: 7px; background: #fff; color: #28533e; font-weight: 650; font-size: .8rem; }
+    .button:hover { background: #eaf1e9; }
+    .category-key { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 12px 0; font-size: .77rem; color: var(--muted); }
+    .category-key b { color: #355b48; }
+    .matrix-note { font-size: .8rem; color: var(--muted); padding: 12px 0 0; }
+    .template-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, 1fr); gap: 18px; }
+    .template-step { display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 14px 0; border-bottom: 1px solid #e5eae3; }
+    .template-step:last-child { border-bottom: none; }
+    .step-number { border-radius: 50%; width: 28px; height: 28px; text-align: center; background: #e6eee4; font-size: .78rem; line-height: 28px; font-weight: 750; }
+    .template-step p { margin: 3px 0 0; color: var(--muted); font-size: .86rem; }
+    .note-list { padding-left: 19px; font-size: .87rem; color: var(--muted); }
+    .note-list li + li { margin-top: 11px; }
+    .examples { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .before { background: #f7f0e6; border-left: 3px solid #a97830; padding: 15px; margin: 12px 0; font-size: .9rem; }
+    .after { background: #eef4ec; border-left: 3px solid #427955; padding: 15px; margin: 12px 0; font-size: .9rem; }
+    .annotation { padding-top: 10px; border-top: 1px solid var(--line); font-size: .84rem; color: var(--muted); }
+    .annotation p { margin: 7px 0; }
+    .tag { display: inline-block; padding: 2px 6px; border-radius: 5px; background: #e4ece3; color: #32593e; font-size: .72rem; font-weight: 700; margin-right: 5px; }
+    .validation { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .validation p { margin: 8px 0 0; font-size: .87rem; color: var(--muted); }
+    footer { margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: .8rem; }
+    .empty { padding: 25px; text-align: center; color: var(--muted); }
+    [hidden] { display: none !important; }
+    @media (max-width: 1100px) {
+      .matrix-layout { grid-template-columns: minmax(0, 1fr); }
+      .detail { position: static; }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .toolbar > :last-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 720px) {
+      .hero, .taxonomy, .template-layout, .examples, .validation { grid-template-columns: 1fr; }
+      .hero { gap: 20px; }
+      .phase-strip { grid-template-columns: repeat(2, 1fr); }
+      .section-head { flex-direction: column; }
+      .toolbar { grid-template-columns: 1fr; }
+      .panel { padding: 17px; }
+    }
+    @media print {
+      .page { max-width: none; padding: 0; }
+      .navigation, .toolbar, .counts .button { display: none; }
+      .matrix-layout { display: block; }
+      .matrix-scroll { overflow: visible; }
+      .detail { position: static; margin-top: 20px; }
+      table { min-width: 0; font-size: .65rem; }
+      .relation { width: auto; height: auto; }
+      .panel { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Design the conditions for understanding</p>
+        <h1>The reader-support protocol</h1>
+        <p class="intro">A practical framework for content that supports attention, working memory, understanding, and motivation. Start with the reader. Make the thinking worthwhile. Remove difficulty that serves no learning purpose.</p>
+      </div>
+      <aside class="principle">
+        <strong>Support, not control.</strong>
+        <p>This protocol is a design framework, not a guaranteed sequence of brain activity. Its matrix expresses intended support, not measured effects, neural activation, or a method for manipulating readers.</p>
+      </aside>
+    </header>
+
+    <nav class="navigation" aria-label="Guide sections">
+      <a href="#inventory">01 · Inventory</a>
+      <a href="#matrix">02 · Relationship matrix</a>
+      <a href="#template">03 · Writing template</a>
+      <a href="#examples">04 · Worked examples</a>
+      <a href="#validate">05 · Validate</a>
+    </nav>
+
+    <section id="inventory" aria-labelledby="inventory-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">01 / Name the different kinds of things</p>
+          <h2 id="inventory-title">What are we designing for?</h2>
+          <p class="subtitle">Cognition is not a collection of interchangeable tools. The framework distinguishes systems and representations, operations on them, and reasons for engaging.</p>
+        </div>
+      </div>
+      <div class="taxonomy">
+        <article class="panel">
+          <h3>Systems &amp; representations</h3>
+          <p>Working memory keeps information available for active use. Concepts and schemas organize knowledge. A situation model represents a particular event; a conceptual model can represent how a system works.</p>
+        </article>
+        <article class="panel">
+          <h3>Processes &amp; regulation</h3>
+          <p>Attention, retrieval, integration, inference, updating, executive control, and metacognitive monitoring help select, connect, use, and evaluate information. They overlap rather than form a strict assembly line.</p>
+        </article>
+        <article class="panel">
+          <h3>Engagement factors</h3>
+          <p>Motivation, interest, and perceived relevance influence whether continuing is worthwhile. Clear content can support engagement, but it cannot guarantee interest or persistence.</p>
+        </article>
+      </div>
+      <div class="phase-strip" aria-label="Protocol phases">
+        <a href="#matrix" data-phase-link="Plan"><b>1. Plan · 5 items</b><span>Reader, knowledge, purpose, outcome, difficulty</span></a>
+        <a href="#matrix" data-phase-link="Compose"><b>2. Compose · 7 items</b><span>Purpose, orient, explain, show, connect, check, continue</span></a>
+        <a href="#matrix" data-phase-link="Review"><b>3. Review · 7 items</b><span>Remove avoidable friction and misleading cues</span></a>
+        <a href="#matrix" data-phase-link="Validate"><b>4. Validate · 3 items</b><span>Explain, transfer, identify confusion</span></a>
+      </div>
+    </section>
+
+    <section id="matrix" aria-labelledby="matrix-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">02 / Author action → intended support</p>
+          <h2 id="matrix-title">Explore the relationship matrix</h2>
+          <p class="subtitle">Select a topic to inspect the action, example, check, and tradeoff. Select a cell to inspect its cognitive relationship. Select a column to find all related protocol items.</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <label>Perspective
+          <select id="perspective">
+            <option value="design">I am designing content</option>
+            <option value="struggle">My reader is struggling</option>
+          </select>
+        </label>
+        <label id="phase-field">Protocol phase
+          <select id="phase">
+            <option value="all">All phases</option>
+            <option>Plan</option><option>Compose</option><option>Review</option><option>Validate</option>
+          </select>
+        </label>
+        <label id="problem-field" hidden>Observed difficulty
+          <select id="problem">
+            <option value="WM">Loses the thread or forgets context</option>
+            <option value="KN">Does not know a term or prerequisite</option>
+            <option value="MOD">Misunderstands a relationship or inference</option>
+            <option value="EX">Loses the goal or place after interruption</option>
+            <option value="META">Feels confident but cannot explain it</option>
+            <option value="MOT">Does not see a reason to continue</option>
+            <option value="ATT">Has trouble locating relevant information</option>
+          </select>
+        </label>
+        <label>Search the inventory
+          <input id="search" type="search" placeholder="Try “example”, “terms”, or “purpose”">
+        </label>
+      </div>
+      <div class="counts">
+        <span id="results" role="status"></span>
+        <span>● Main intended support · ○ Supporting relationship · — Not a main target</span>
+        <button class="button" type="button" id="reset">Reset filters</button>
+      </div>
+      <div class="category-key" id="category-key"></div>
+      <div class="matrix-layout">
+        <div>
+          <div class="matrix-scroll" tabindex="0" aria-label="Scrollable relationship matrix">
+            <table>
+              <caption>22 protocol items mapped to seven cognitive categories. Marks describe design intent, not effect size.</caption>
+              <thead><tr id="matrix-heading"><th scope="col">Author action / protocol item</th></tr></thead>
+              <tbody id="matrix-body"></tbody>
+            </table>
+            <p id="empty" class="empty" hidden>No items match these filters. Clear the search or reset the filters.</p>
+          </div>
+          <p class="matrix-note">Planning rows describe what the author considers, not an intervention directly performed in the reader. Difficulty suggestions are starting points, not diagnoses. Several columns deliberately group related functions; the details explain which relationship is intended.</p>
+        </div>
+        <aside class="panel detail" id="detail" aria-labelledby="detail-title" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section id="template" aria-labelledby="template-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">03 / A reusable section scaffold</p>
+          <h2 id="template-title">Make one meaningful advance</h2>
+          <p class="subtitle">Use this as a flexible checklist, not a mandatory sequence. A paragraph does not need every move; a short explanation may combine several.</p>
+        </div>
+      </div>
+      <div class="template-layout">
+        <article class="panel">
+          <div class="template-step"><span class="step-number">1</span><div><h3>Question &amp; value</h3><p>[What question does this section answer? Why does it matter to this reader?]</p></div></div>
+          <div class="template-step"><span class="step-number">2</span><div><h3>Starting point</h3><p>[What familiar idea or prerequisite helps? Define unfamiliar terms before relying on them.]</p></div></div>
+          <div class="template-step"><span class="step-number">3</span><div><h3>Core explanation</h3><p>[State one central claim. Make the relevant relationships explicit.]</p></div></div>
+          <div class="template-step"><span class="step-number">4</span><div><h3>Concrete example</h3><p>[Show the claim in action. Explain which part of the example illustrates which part of the idea.]</p></div></div>
+          <div class="template-step"><span class="step-number">5</span><div><h3>Connection &amp; boundary</h3><p>[Connect to the larger picture. State what does not follow, or where the analogy stops.]</p></div></div>
+          <div class="template-step"><span class="step-number">6</span><div><h3>Optional check</h3><p>[Ask for an explanation, distinction, or new application. Offer useful feedback rather than a trick question.]</p></div></div>
+          <div class="template-step"><span class="step-number">7</span><div><h3>Takeaway &amp; next question</h3><p>[Recap the advance. Resolve the current question before inviting the reader to the next one.]</p></div></div>
+        </article>
+        <aside class="panel">
+          <h3>Complete the brief first</h3>
+          <ul class="note-list">
+            <li><strong>Reader:</strong> Who is this for, and in what reading context?</li>
+            <li><strong>Starting knowledge:</strong> What can I reasonably assume?</li>
+            <li><strong>Purpose:</strong> What question or need brings the reader here?</li>
+            <li><strong>Outcome:</strong> What should they understand or do afterward?</li>
+            <li><strong>Likely difficulty:</strong> What term, relation, or assumption may cause confusion?</li>
+          </ul>
+          <h3>Do not optimize for frictionless reading alone</h3>
+          <p class="subtitle">Some effort is valuable: comparing cases, explaining a mechanism, or revising an assumption. Remove accidental difficulty, not all intellectual challenge.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="examples" aria-labelledby="examples-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">04 / Watch the protocol change the writing</p>
+          <h2 id="examples-title">Two annotated revisions</h2>
+          <p class="subtitle">These are illustrative author decisions, not proof of a cognitive effect. A clearer passage still needs testing with its intended readers.</p>
+        </div>
+      </div>
+      <div class="examples">
+        <article class="panel">
+          <h3>Example A · Explain a relationship</h3>
+          <div class="before"><strong>Before</strong><br>It supplies the needed information and helps construct it. This is what improves comprehension.</div>
+          <div class="after"><strong>After</strong><br>A schema is organized prior knowledge. When you read about mixing milk, flour, and an egg, recipe knowledge can help you infer that the mixture is batter. Working memory keeps useful details active as a model of this particular event develops. The passage does not establish that the batter was cooked.</div>
+          <div class="annotation">
+            <p><span class="tag">Orient</span>Define “schema” before using it as an explanatory concept.</p>
+            <p><span class="tag">Clarify</span>Replace ambiguous “it” with the relevant system or representation.</p>
+            <p><span class="tag">Show</span>Map a concrete recipe example to the abstract relationship.</p>
+            <p><span class="tag">Boundary</span>Separate a plausible inference from an event the text never stated.</p>
+            <p><strong>Check:</strong> Ask the reader which detail is inferred and whether cooking was established.</p>
+          </div>
+        </article>
+        <article class="panel">
+          <h3>Example B · Keep the goal visible</h3>
+          <div class="before"><strong>Before</strong><br>Before we explain how to choose a backup interval, here are twelve storage terms. The most important secret comes at the end.</div>
+          <div class="after"><strong>After</strong><br>How much work could you afford to lose? That answer helps you choose a backup interval. For example, hourly backups can leave roughly an hour of changes unprotected between successful backups. First choose an acceptable loss window; then check whether your backup system can meet it reliably. Next we will distinguish that window from the time needed to restore service.</div>
+          <div class="annotation">
+            <p><span class="tag">Purpose</span>Start with the reader's decision, not an unrelated glossary.</p>
+            <p><span class="tag">Explain</span>Introduce the interval and its consequence together.</p>
+            <p><span class="tag">Boundary</span>The estimate assumes successful backups; failures can increase loss.</p>
+            <p><span class="tag">Continue</span>Provide the useful answer before introducing the next question.</p>
+            <p><strong>Check:</strong> Ask the reader to choose an interval for a different acceptable loss window and explain the assumptions.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="validate" aria-labelledby="validate-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">05 / Verify understanding, not just engagement</p>
+          <h2 id="validate-title">Close the loop with real readers</h2>
+          <p class="subtitle">Use a representative reader, a realistic task, and a specific intended outcome. Avoid interpreting every error as a memory or attention problem.</p>
+        </div>
+      </div>
+      <div class="validation">
+        <article class="panel"><h3>1. Explain</h3><p>Ask the reader to explain the main idea without copying the passage. Look for the essential relationships, not matching wording.</p></article>
+        <article class="panel"><h3>2. Transfer</h3><p>Offer a new case and ask for an application. Check whether the reader can reason beyond the original example.</p></article>
+        <article class="panel"><h3>3. Locate confusion</h3><p>Ask what remains unclear and where understanding broke down. Use errors and feedback to revise the passage, then check again.</p></article>
+      </div>
+      <p class="matrix-note">Clicks, scroll depth, time on page, and satisfaction can inform engagement or usability. None alone establishes comprehension. Fast reading may mean fluency, skimming, or disengagement; longer reading may mean interest or confusion.</p>
+    </section>
+
+    <footer>
+      <strong>Scope:</strong> This is a practical synthesis and editable design hypothesis, not a validated psychological assessment or scored cognitive model.
+      <br>Related conceptual demos: <a href="cognitive-reading-process.html">Reading process map</a> · <a href="cognitive-kitchen-scene.html">Cognitive kitchen</a>.
+      This guide has no external scripts and works offline.
+    </footer>
+  </main>
+
+  <script>
+    const categories = [
+      { id: "ATT", name: "Attention", mechanism: "Help readers locate and prioritize relevant information." },
+      { id: "WM", name: "Working memory", mechanism: "Reduce unnecessary maintenance demands while keeping useful details available." },
+      { id: "KN", name: "Concepts, schemas & retrieval", mechanism: "Make prerequisite concepts and relevant prior knowledge accessible." },
+      { id: "MOD", name: "Integration, inference & model construction", mechanism: "Help readers connect relationships and construct or revise a coherent representation." },
+      { id: "EX", name: "Executive control & goals", mechanism: "Help readers maintain a purpose, choose a next step, or regain their place." },
+      { id: "META", name: "Metacognitive monitoring", mechanism: "Help readers notice the limits of their understanding and identify when revision is needed." },
+      { id: "MOT", name: "Motivation & relevance", mechanism: "Make the content's value visible and preserve the reader's freedom to engage." }
+    ];
+
+    // 2 = main intended support; 1 = supporting relationship; 0 = not a main target.
+    const items = [
+      {
+        id: "reader", phase: "Plan", title: "Identify the reader and reading context", links: "1111102",
+        action: "Describe who the reader is, what task brings them here, and how they will encounter the content.",
+        example: "A novice reading on a phone between tasks needs different orientation from an expert consulting a reference.",
+        check: "Ask a representative reader whether the passage addresses their actual task.",
+        risk: "A fictional reader profile can hide differences in knowledge, accessibility, and goals."
+      },
+      {
+        id: "prerequisites", phase: "Plan", title: "Establish starting knowledge and prerequisites", links: "0121000",
+        action: "List the concepts and relationships the explanation assumes, then decide what needs introducing.",
+        example: "Before explaining schemas, distinguish general knowledge from a particular remembered event.",
+        check: "Ask the reader to explain the prerequisite distinction before testing the new idea.",
+        risk: "Too much background can burden experts; too little can leave novices without a usable starting point."
+      },
+      {
+        id: "need", phase: "Plan", title: "Identify the reader's question or need", links: "1010202",
+        action: "State the question or decision the content should help the reader resolve.",
+        example: "Frame a backup guide around acceptable data loss rather than a list of product features.",
+        check: "Ask whether the opening matches the reader's question and whether the answer is findable.",
+        risk: "An attractive promise that the content never fulfills undermines trust."
+      },
+      {
+        id: "outcome", phase: "Plan", title: "Define the intended learning outcome", links: "1001211",
+        action: "Name an observable understanding or action the reader should achieve.",
+        example: "The reader should distinguish a schema from a model of a particular situation.",
+        check: "Use a fresh case that requires the intended distinction.",
+        risk: "A vague outcome such as 'understand everything' cannot guide a useful check."
+      },
+      {
+        id: "difficulty", phase: "Plan", title: "Anticipate likely difficulties", links: "1222110",
+        action: "Identify terms, references, relationships, or assumptions likely to cause confusion.",
+        example: "The reader might mistake executive control for a little person giving orders.",
+        check: "Ask readers where they hesitated and compare their explanations with your anticipated pitfalls.",
+        risk: "Predictions about difficulty are hypotheses; they should not replace reader feedback."
+      },
+      {
+        id: "purpose", phase: "Compose", title: "Purpose: state the question and its value", links: "2010202",
+        action: "Open with a relevant question and a concrete reason its answer matters.",
+        example: "How do you tell a plausible inference from an event the passage actually states?",
+        check: "Ask the reader what this section promises to help them do.",
+        risk: "Forced urgency, inflated stakes, or artificial suspense can distract from genuine relevance."
+      },
+      {
+        id: "orient", phase: "Compose", title: "Orient: connect to familiar knowledge", links: "1122101",
+        action: "Activate a relevant starting point and define prerequisites before relying on them.",
+        example: "Use a familiar restaurant to illustrate general roles and expectations in a schema.",
+        check: "Ask the reader to explain the new concept using a different familiar situation.",
+        risk: "A misleading analogy may create the wrong expectation; explicitly state where it stops."
+      },
+      {
+        id: "explain", phase: "Compose", title: "Explain: develop one meaningful idea", links: "1212100",
+        action: "State a central claim and unpack the relationships needed to understand it.",
+        example: "Explain how activated knowledge helps interpret text before adding details of competing memory theories.",
+        check: "Ask for the central relationship in the reader's own words.",
+        risk: "Splitting content too finely can hide connections; manageable does not mean context-free."
+      },
+      {
+        id: "show", phase: "Compose", title: "Show: provide a concrete example or diagram", links: "1122011",
+        action: "Choose a case that visibly demonstrates the claim and explain how the parts correspond.",
+        example: "Show 'she' linking to Nia and mark 'batter' as an inference in the reading example.",
+        check: "Ask which feature of the example demonstrates the principle.",
+        risk: "Decorative images, extra labels, or one overly memorable example can obscure the general idea."
+      },
+      {
+        id: "connect", phase: "Compose", title: "Connect: relate the idea to the larger picture", links: "0122111",
+        action: "Explain how the current idea changes or extends what the reader already understands.",
+        example: "A model can represent an action, while inference is a cognitive operation that helps build that model.",
+        check: "Ask the reader to relate the idea to an earlier section or new case.",
+        risk: "Too many cross-references can require readers to maintain unnecessary distant details."
+      },
+      {
+        id: "check", phase: "Compose", title: "Check: offer application or explanation", links: "1122121",
+        action: "Offer a brief, purposeful task that requires explanation or application and useful feedback.",
+        example: "Ask whether a second passage establishes that Nia cooked the mixture, and why.",
+        check: "Evaluate the reasoning, not only the selected answer or confidence.",
+        risk: "Constant tests, trick questions, or missing feedback can interrupt flow and discourage readers."
+      },
+      {
+        id: "continue", phase: "Compose", title: "Continue: recap and introduce the next question", links: "1211211",
+        action: "Resolve the current question, briefly preserve the key takeaway, and orient the next step.",
+        example: "Now we have distinguished schema from situation model; next we examine how new evidence revises the model.",
+        check: "Ask what was established and what the next section will add.",
+        risk: "Repeated summaries can become noise; do not withhold essential information just to keep readers scrolling."
+      },
+      {
+        id: "terms", phase: "Review", title: "Explain unfamiliar terms before relying on them", links: "0221000",
+        action: "Define terms in the context where they become necessary, with an appropriate example.",
+        example: "Introduce working memory as active use, not merely short-term storage.",
+        check: "Ask the reader to use the term accurately in a new sentence or example.",
+        risk: "A glossary alone may not help at the moment a term is needed; definitions can also oversimplify."
+      },
+      {
+        id: "references", phase: "Review", title: "Clarify references, relationships, and causal links", links: "1212000",
+        action: "Replace ambiguous references and make essential relationships explicit.",
+        example: "Replace 'it changes it' with 'new evidence can change the situation model.'",
+        check: "Ask who or what each critical pronoun refers to and what caused the described change.",
+        risk: "Over-explaining every link can make familiar passages tedious; do not invent causality the evidence does not support."
+      },
+      {
+        id: "context", phase: "Review", title: "Restate necessary distant details", links: "0212100",
+        action: "Briefly reintroduce earlier information needed for the current argument.",
+        example: "Before a contrast, restate that schemas are general knowledge and situation models are specific.",
+        check: "Ask readers to explain the contrast without having to search several screens back.",
+        risk: "Restating everything increases length and hides what is actually relevant."
+      },
+      {
+        id: "decoration", phase: "Review", title: "Remove decorative or misleading examples", links: "1112010",
+        action: "Retain examples and visuals that explain a relationship; remove or revise those that only decorate.",
+        example: "Replace a dramatic brain illustration with a labeled comparison of schema and situation model.",
+        check: "Ask readers what the visual teaches and what it might wrongly imply.",
+        risk: "Removing all narrative or visual appeal can reduce engagement; usefulness is not the same as austerity."
+      },
+      {
+        id: "evidence", phase: "Review", title: "Distinguish fact, inference, analogy, and uncertainty", links: "0112120",
+        action: "Label what is stated, what is inferred, what is metaphor, and what remains uncertain.",
+        example: "Say 'batter is a plausible inference' and 'the kitchen is not a map of brain anatomy.'",
+        check: "Ask which claims the evidence supports and which require qualification.",
+        risk: "Vague hedging can obscure clear conclusions; qualifications should match the actual uncertainty."
+      },
+      {
+        id: "recovery", phase: "Review", title: "Help readers recover after interruption", links: "1211201",
+        action: "Use informative headings, visible goals, and short context cues to support re-entry.",
+        example: "A heading says 'Schema: general knowledge' rather than 'The next instrument.'",
+        check: "After a short break, ask a reader to locate their place and identify the current question.",
+        risk: "Too many cues compete for attention; recovery needs may differ between reference and narrative reading."
+      },
+      {
+        id: "value", phase: "Review", title: "Deliver promised value without artificial withholding", links: "1001102",
+        action: "Answer the promised question clearly and offer a legitimate next step.",
+        example: "State the key distinction early instead of announcing a secret answer at the end.",
+        check: "Ask whether the section fulfilled its opening promise and whether continuing is useful.",
+        risk: "An early answer still needs enough explanation; not every narrative requires its resolution in the first line."
+      },
+      {
+        id: "explanation-test", phase: "Validate", title: "Ask readers to explain the main idea", links: "0122020",
+        action: "Ask for an explanation without copying the passage; listen for essential relationships.",
+        example: "Explain why a situation model is not simply another name for working memory.",
+        check: "Compare the explanation with the intended outcome and look for systematic misunderstandings.",
+        risk: "Writing or speaking difficulty may affect the response independently of understanding."
+      },
+      {
+        id: "transfer-test", phase: "Validate", title: "Ask readers to apply it to a new example", links: "0122120",
+        action: "Use a new case that requires the idea rather than memorized wording.",
+        example: "Identify a schema and a situation model in a meeting rather than a recipe.",
+        check: "Ask why the application fits and what would change the conclusion.",
+        risk: "An unfamiliar test context can add difficulty unrelated to the explanation being evaluated."
+      },
+      {
+        id: "confusion-test", phase: "Validate", title: "Ask readers to identify remaining confusion", links: "0011120",
+        action: "Invite specific feedback about missing links, uncertain terms, or a point where the thread was lost.",
+        example: "Which relationship between executive control and monitoring is still unclear?",
+        check: "Pair self-report with explanation or application, revise the passage, and check again.",
+        risk: "Readers may not notice their own misconceptions; 'nothing is unclear' is not proof of comprehension."
+      }
+    ];
+
+    const phases = ["Plan", "Compose", "Review", "Validate"];
+    const categoriesById = new Map(categories.map(category => [category.id, category]));
+    const itemsById = new Map(items.map(item => [item.id, item]));
+    const perspective = document.querySelector("#perspective");
+    const phase = document.querySelector("#phase");
+    const problem = document.querySelector("#problem");
+    const search = document.querySelector("#search");
+    const body = document.querySelector("#matrix-body");
+    const detail = document.querySelector("#detail");
+    let selectedItem = "orient";
+    let selectedCategory = null;
+    let columnFilter = null;
+
+    const key = document.querySelector("#category-key");
+    const heading = document.querySelector("#matrix-heading");
+    for (const category of categories) {
+      const definition = document.createElement("span");
+      const abbreviation = document.createElement("b");
+      abbreviation.textContent = `${category.id} `;
+      definition.append(abbreviation, category.name);
+      key.append(definition);
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "column-button";
+      button.textContent = category.id;
+      button.title = category.name;
+      button.setAttribute("aria-label", `Filter items supporting ${category.name}`);
+      button.setAttribute("aria-pressed", "false");
+      button.dataset.category = category.id;
+      button.addEventListener("click", () => {
+        columnFilter = columnFilter === category.id ? null : category.id;
+        render();
+      });
+      cell.append(button);
+      heading.append(cell);
+    }
+
+    function filteredItems() {
+      const query = search.value.trim().toLowerCase();
+      const categoryId = perspective.value === "struggle" ? problem.value : columnFilter;
+      const categoryIndex = categories.findIndex(category => category.id === categoryId);
+      return items.filter(item =>
+        (perspective.value === "struggle" || phase.value === "all" || phase.value === item.phase) &&
+        (categoryIndex < 0 || Number(item.links[categoryIndex]) > 0) &&
+        (!query || `${item.title} ${item.action} ${item.example}`.toLowerCase().includes(query))
+      );
+    }
+
+    function showDetail() {
+      const item = itemsById.get(selectedItem);
+      detail.replaceChildren();
+      const label = document.createElement("p");
+      label.className = "eyebrow";
+      label.textContent = `${item.phase} / Protocol detail`;
+      const title = document.createElement("h3");
+      title.id = "detail-title";
+      title.textContent = item.title;
+      const list = document.createElement("dl");
+      for (const [term, text] of [
+        ["Author action", item.action], ["Concrete example", item.example],
+        ["Observable check", item.check], ["Possible drawback", item.risk]
+      ]) {
+        const dt = document.createElement("dt");
+        dt.textContent = term;
+        const dd = document.createElement("dd");
+        dd.textContent = text;
+        list.append(dt, dd);
+      }
+      detail.append(label, title, list);
+      if (selectedCategory) {
+        const category = categoriesById.get(selectedCategory);
+        const index = categories.findIndex(entry => entry.id === selectedCategory);
+        const strength = Number(item.links[index]);
+        const note = document.createElement("div");
+        note.className = "relationship-note";
+        const name = document.createElement("strong");
+        name.textContent = `${category.id} / ${category.name}`;
+        const support = document.createElement("p");
+        support.textContent = strength === 0
+          ? "Not a main target in this protocol mapping. This does not mean there is no possible relationship."
+          : `${strength === 2 ? "Main intended support" : "Supporting relationship"}: ${category.mechanism}`;
+        const scope = document.createElement("p");
+        scope.textContent = item.phase === "Plan"
+          ? "Here, this connection guides an author decision; it does not describe a direct operation inside the reader."
+          : "Apply the action above, then use its observable check. This is a design hypothesis, not a measured effect.";
+        note.append(name, support, scope);
+        detail.append(note);
+      }
+    }
+
+    function render() {
+      const visible = filteredItems();
+      const hasSelection = visible.some(item => item.id === selectedItem);
+      if (!hasSelection && visible.length) {
+        selectedItem = visible[0].id;
+        selectedCategory = null;
+      }
+      document.querySelector("#phase-field").hidden = perspective.value === "struggle";
+      document.querySelector("#problem-field").hidden = perspective.value !== "struggle";
+      for (const button of heading.querySelectorAll("button")) {
+        button.setAttribute("aria-pressed", String(perspective.value === "design" && columnFilter === button.dataset.category));
+        button.disabled = perspective.value === "struggle";
+      }
+      const categoryId = perspective.value === "struggle" ? problem.value : columnFilter;
+      const filterName = categoryId ? ` · supporting ${categoriesById.get(categoryId).name}` : "";
+      document.querySelector("#results").textContent = `${visible.length} of ${items.length} items${filterName}`;
+      body.replaceChildren();
+      for (const phaseName of phases) {
+        const phaseItems = visible.filter(item => item.phase === phaseName);
+        if (!phaseItems.length) continue;
+        const phaseRow = document.createElement("tr");
+        phaseRow.className = "phase-row";
+        const phaseCell = document.createElement("th");
+        phaseCell.colSpan = categories.length + 1;
+        phaseCell.scope = "colgroup";
+        phaseCell.textContent = `${phaseName} · ${phaseItems.length} items`;
+        phaseRow.append(phaseCell);
+        body.append(phaseRow);
+        for (const item of phaseItems) {
+          const row = document.createElement("tr");
+          row.dataset.selected = String(item.id === selectedItem);
+          const nameCell = document.createElement("th");
+          nameCell.scope = "row";
+          const nameButton = document.createElement("button");
+          nameButton.className = "row-button";
+          nameButton.type = "button";
+          nameButton.textContent = item.title;
+          nameButton.setAttribute("aria-pressed", String(item.id === selectedItem));
+          nameButton.addEventListener("click", () => {
+            selectedItem = item.id;
+            selectedCategory = null;
+            updateSelection();
+          });
+          nameCell.append(nameButton);
+          row.append(nameCell);
+          categories.forEach((category, index) => {
+            const strength = Number(item.links[index]);
+            const cell = document.createElement("td");
+            const button = document.createElement("button");
+            button.className = "relation";
+            button.type = "button";
+            button.dataset.strength = strength;
+            button.dataset.item = item.id;
+            button.dataset.category = category.id;
+            button.textContent = ["—", "○", "●"][strength];
+            const meaning = ["Not a main target", "Supporting relationship", "Main intended support"][strength];
+            button.setAttribute("aria-label", `${item.title} / ${category.name}: ${meaning}`);
+            button.addEventListener("click", () => {
+              selectedItem = item.id;
+              selectedCategory = category.id;
+              updateSelection();
+            });
+            cell.append(button);
+            row.append(cell);
+          });
+          row.dataset.item = item.id;
+          body.append(row);
+        }
+      }
+      document.querySelector("#empty").hidden = visible.length > 0;
+      detail.hidden = visible.length === 0;
+      if (visible.length) showDetail();
+    }
+
+    function updateSelection() {
+      for (const row of body.querySelectorAll("tr[data-item]")) {
+        const active = row.dataset.item === selectedItem;
+        row.dataset.selected = String(active);
+        row.querySelector(".row-button").setAttribute("aria-pressed", String(active));
+      }
+      showDetail();
+    }
+
+    perspective.addEventListener("change", render);
+    phase.addEventListener("change", render);
+    problem.addEventListener("change", render);
+    search.addEventListener("input", render);
+    document.querySelector("#reset").addEventListener("click", () => {
+      perspective.value = "design";
+      phase.value = "all";
+      search.value = "";
+      columnFilter = null;
+      selectedItem = "orient";
+      selectedCategory = null;
+      render();
+    });
+    for (const link of document.querySelectorAll("[data-phase-link]")) {
+      link.addEventListener("click", () => {
+        perspective.value = "design";
+        phase.value = link.dataset.phaseLink;
+        search.value = "";
+        columnFilter = null;
+        render();
+      });
+    }
+    render();
+  </script>
+</body>
+</html>

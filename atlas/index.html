@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f1ea">
+  <meta name="description" content="Atlas of Cognition: a practical map of human cognitive systems, tools, AI extensions, relationships, and assessments.">
+  <title>Atlas of Cognition</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/app/namespace.js" defer></script>
+  <script src="data/index.js" defer></script>
+  <script src="data/domains/attention.js" defer></script>
+  <script src="data/domains/memory.js" defer></script>
+  <script src="data/domains/executive.js" defer></script>
+  <script src="data/domains/knowledge.js" defer></script>
+  <script src="data/domains/reasoning.js" defer></script>
+  <script src="data/domains/learning.js" defer></script>
+  <script src="data/domains/creativity.js" defer></script>
+  <script src="data/domains/social.js" defer></script>
+  <script src="data/domains/self-regulation.js" defer></script>
+  <script src="data/domains/future.js" defer></script>
+  <script src="data/domains/decision.js" defer></script>
+  <script src="data/domains/metacognition.js" defer></script>
+  <script src="assets/app/data.js" defer></script>
+  <script src="assets/app/core.js" defer></script>
+  <script src="assets/app/notes.js" defer></script>
+  <script src="assets/app/quiz.js" defer></script>
+  <script src="assets/app/dashboard.js" defer></script>
+  <script src="assets/app/concept.js" defer></script>
+  <script src="assets/app/graph.js" defer></script>
+</head>
+<body data-page="home">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app">
+    <header class="topbar" id="topbar"></header>
+    <div class="shell">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main" id="main">
+        <div class="content">
+          <section class="hero">
+            <div>
+              <span class="release-badge">Release 1 · Twelve live domains</span>
+              <h1>Map the systems behind human thought.</h1>
+              <p class="hero-copy">The Atlas of Cognition connects cognitive science to workplace practice, external tools, AI extensions, failure modes, and assessment. Explore the mind as an interacting system—not a list of isolated definitions.</p>
+            </div>
+            <aside class="hero-card" id="home-progress">
+              <strong>0/12</strong>
+              <p>Release 1 domain assessments completed.</p>
+            </aside>
+          </section>
+
+          <div class="search-panel">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <label class="skip-link" for="atlas-search">Search concepts and domains</label>
+            <input class="search-input" id="atlas-search" type="search" autocomplete="off" placeholder="Search concepts, domains, tools, and relationships…">
+            <div class="search-results" id="search-results" aria-live="polite"></div>
+          </div>
+
+          <section class="section" id="explore">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Explore the cognitive taxonomy</p>
+                <h2>Twelve domains, one connected system</h2>
+                <p class="section-intro">All twelve domains are complete in this release, each with capabilities, concept pages, and a seven-question assessment.</p>
+              </div>
+            </div>
+            <div class="domain-grid" id="domain-grid"></div>
+          </section>
+
+          <section class="section">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">How to use Release 1</p>
+                <h2>Reference, application, and assessment</h2>
+              </div>
+            </div>
+            <div class="learning-grid">
+              <article class="panel"><h3>1 · Learn the distinctions</h3><p>Each domain introduces capabilities, learning objectives, workplace examples, and common failure modes.</p></article>
+              <article class="panel"><h3>2 · Build your notebook</h3><p>Add comments, questions, tasks, or custom notes to every domain section, then review them in your <a href="dashboard.html">learning dashboard</a>.</p></article>
+              <article class="panel"><h3>3 · Test application</h3><p>Complete each seven-question assessment, inspect your progress, and transfer notes and results between devices with a portable export.</p></article>
+            </div>
+          </section>
+
+          <section class="section" id="roadmap">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Incremental product roadmap</p>
+                <h2>What this release deliberately does not pretend to finish</h2>
+              </div>
+            </div>
+            <div class="roadmap-grid">
+              <article class="panel"><h3>Now · Domain foundation</h3><p>Index, search, shared taxonomy, twelve substantive domains, concept pages, knowledge graph, learning paths, cognitive profile, Human ↔ Tool ↔ AI mappings, local progress, and interactive assessment.</p></article>
+              <article class="panel"><h3>Next · Concept depth</h3><p>Richer concept pages, relationship-mapping and reflection questions, and content for the remaining learning-path steps.</p></article>
+              <article class="panel"><h3>Later · Adaptive learning</h3><p>Adaptive quizzes, spaced review, and an AI tutor.</p></article>
+            </div>
+          </section>
+
+          <footer class="site-footer">
+            Release 1 is a standalone local prototype based on the Atlas PRD. Notes and progress are stored only in this browser unless you export them. Assessment scores support reflection; they are not psychological measurements.
+          </footer>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

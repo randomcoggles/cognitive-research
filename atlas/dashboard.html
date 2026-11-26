@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f1ea">
+  <meta name="description" content="Review Atlas of Cognition notes, questions, tasks, and assessment progress.">
+  <title>Learning Dashboard · Atlas of Cognition</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/app/namespace.js" defer></script>
+  <script src="data/index.js" defer></script>
+  <script src="assets/app/data.js" defer></script>
+  <script src="assets/app/core.js" defer></script>
+  <script src="assets/app/notes.js" defer></script>
+  <script src="assets/app/quiz.js" defer></script>
+  <script src="assets/app/dashboard.js" defer></script>
+  <script src="assets/app/concept.js" defer></script>
+  <script src="assets/app/graph.js" defer></script>
+</head>
+<body data-page="dashboard">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app">
+    <header class="topbar" id="topbar"></header>
+    <div class="shell">
+      <aside class="sidebar" id="sidebar"></aside>
+      <main class="main" id="main">
+        <div class="content">
+          <nav class="breadcrumb"><a href="index.html">Atlas</a><span>/</span><span>Learning dashboard</span></nav>
+
+          <section class="hero dashboard-hero">
+            <div>
+              <span class="release-badge">Your local learning workspace</span>
+              <h1>Turn reading into an active learning practice.</h1>
+              <p class="hero-copy">Review what you captured, resolve questions, complete learning tasks, and see how your assessment results develop across the Atlas.</p>
+            </div>
+          </section>
+
+          <section class="section" aria-labelledby="overview-heading">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Learning overview</p>
+                <h2 id="overview-heading">Your activity at a glance</h2>
+              </div>
+            </div>
+            <div class="stats-grid dashboard-stats" id="dashboard-stats"></div>
+          </section>
+
+          <section class="section" aria-labelledby="assessment-heading">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Assessment record</p>
+                <h2 id="assessment-heading">Quiz progress by domain</h2>
+                <p class="section-intro">Scores show performance on these short educational quizzes, not psychological mastery.</p>
+              </div>
+            </div>
+            <div class="quiz-dashboard" id="quiz-dashboard"></div>
+          </section>
+
+          <section class="section" aria-labelledby="notes-heading">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Notebook</p>
+                <h2 id="notes-heading">All notes in one place</h2>
+                <p class="section-intro">Add or edit notes on their original domain sections. Use this view to search, filter, complete tasks, and remove notes.</p>
+              </div>
+            </div>
+            <div class="dashboard-filters">
+              <label class="filter-field">
+                <span>Search notes</span>
+                <input id="notes-search" type="search" placeholder="Search text, section, or custom label">
+              </label>
+              <label class="filter-field">
+                <span>Domain</span>
+                <select id="notes-domain-filter"><option value="">All domains</option></select>
+              </label>
+              <label class="filter-field">
+                <span>Type</span>
+                <select id="notes-type-filter">
+                  <option value="">All types</option>
+                  <option value="comment">Comments</option>
+                  <option value="question">Questions</option>
+                  <option value="task">Tasks</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </label>
+            </div>
+            <div class="dashboard-note-list" id="dashboard-notes"></div>
+          </section>
+
+          <section class="section" aria-labelledby="transfer-heading">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Device transfer</p>
+                <h2 id="transfer-heading">Export or import your learning data</h2>
+                <p class="section-intro">The JSON file contains your notes, quiz results, and concept levels. Keep it private: note text may contain personal information.</p>
+              </div>
+            </div>
+            <div class="panel transfer-panel">
+              <div>
+                <h3>Portable local data</h3>
+                <p>Export on one device, move the downloaded file to the other device, then import it here. Merge keeps the newest version of matching records (and the higher concept level). Replace overwrites all local Atlas notes, quiz results, and concept levels.</p>
+              </div>
+              <div>
+                <label class="transfer-field">
+                  <span>Import behavior</span>
+                  <select id="import-mode">
+                    <option value="merge">Merge with this device</option>
+                    <option value="replace">Replace data on this device</option>
+                  </select>
+                </label>
+                <div class="transfer-actions">
+                  <button class="primary-button" id="export-learning-data" type="button">Export JSON</button>
+                  <button class="plain-button" id="import-learning-data" type="button">Import JSON</button>
+                  <input id="learning-data-file" type="file" accept="application/json,.json" hidden>
+                </div>
+                <p class="transfer-status" id="transfer-status" role="status"></p>
+              </div>
+            </div>
+          </section>
+
+          <footer class="site-footer">Atlas learning data stays in this browser unless you explicitly export it. Store exported files securely.</footer>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
