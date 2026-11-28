@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attention Capabilities — Interactive Annotation</title>
+    <style>
+        /* === PASTE CSS PART HERE === */
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --accent: #2563eb;
+            --accent-soft: #dbeafe;
+            --correct-bg: #dcfce7;
+            --correct-border: #16a34a;
+            --wrong-bg: #fee2e2;
+            --wrong-border: #dc2626;
+            --distractor-bg: #fef3c7;
+            --distractor-border: #d97706;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.85;
+            max-width: 780px;
+            margin: 40px auto;
+            padding: 0 20px 80px;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        h1 {
+            font-size: 1.65rem;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .instructions {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .story-card {
+            background: var(--card);
+            padding: 32px 36px;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+            font-size: 1.05rem;
+        }
+
+        .story-card p {
+            margin-bottom: 1.35rem;
+        }
+
+        /* Segment & Highlight States */
+        .segment {
+            position: relative;
+            border-radius: 5px;
+            padding: 2px 4px;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .segment.tagged {
+            background-color: var(--accent-soft);
+            box-shadow: inset 0 -2px 0 var(--accent);
+        }
+
+        .segment.correct {
+            background-color: var(--correct-bg);
+            box-shadow: inset 0 -2px 0 var(--correct-border);
+        }
+
+        .segment.incorrect {
+            background-color: var(--wrong-bg);
+            box-shadow: inset 0 -2px 0 var(--wrong-border);
+        }
+
+        .segment.false-alarm {
+            background-color: var(--distractor-bg);
+            box-shadow: inset 0 -2px 0 var(--distractor-border);
+        }
+
+        /* Inline Icon Trigger */
+        .tag-trigger {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            vertical-align: middle;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 999px;
+            padding: 2px 7px;
+            margin: 0 4px 2px 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .tag-trigger:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: #eff6ff;
+        }
+
+        .tag-trigger.has-value {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .tag-trigger svg {
+            width: 13px;
+            height: 13px;
+            stroke-width: 2.2;
+            flex-shrink: 0;
+        }
+
+        /* Custom Hover Tooltip */
+        .tag-trigger::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: #0f172a;
+            color: #f8fafc;
+            font-size: 0.72rem;
+            font-weight: 500;
+            white-space: nowrap;
+            padding: 4px 8px;
+            border-radius: 5px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            z-index: 20;
+        }
+
+        .tag-trigger:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Floating Popover Dropdown */
+        .popover-menu {
+            position: absolute;
+            z-index: 100;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+            width: 250px;
+            max-height: 310px;
+            overflow-y: auto;
+            padding: 6px;
+            display: none;
+        }
+
+        .popover-menu.open {
+            display: block;
+        }
+
+        .popover-header {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            padding: 6px 10px 4px;
+            font-weight: 700;
+        }
+
+        .popover-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            padding: 7px 10px;
+            font-size: 0.84rem;
+            color: #1e293b;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+
+        .popover-option:hover {
+            background: #f1f5f9;
+            color: var(--accent);
+        }
+
+        .popover-option.clear-opt {
+            color: #64748b;
+            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 4px;
+            border-radius: 6px 6px 0 0;
+        }
+
+        /* Feedback Note */
+        .feedback-badge {
+            display: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 6px;
+            padding: 1px 7px;
+            border-radius: 4px;
+        }
+
+        .segment.incorrect .feedback-badge,
+        .segment.false-alarm .feedback-badge,
+        .segment.correct .feedback-badge {
+            display: inline-block;
+        }
+
+        .segment.correct .feedback-badge {
+            background: #bbf7d0;
+            color: #14532d;
+        }
+
+        .segment.incorrect .feedback-badge {
+            background: #fecaca;
+            color: #7f1d1d;
+        }
+
+        .segment.false-alarm .feedback-badge {
+            background: #fde68a;
+            color: #78350f;
+        }
+
+        /* Controls & Scoreboard */
+        .controls {
+            margin-top: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 14px;
+        }
+
+        button.btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button.btn:hover {
+            background: #1d4ed8;
+        }
+
+        button.btn.secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        button.btn.secondary:hover {
+            background: #cbd5e1;
+        }
+
+        #score-summary {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- === PASTE HTML BODY PART HERE === -->
+    <h1>The Midnight Dispatch</h1>
+    <p class="instructions">
+        Click the tag icons (<svg style="width:13px;height:13px;vertical-align:-2px" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+            <line x1="7" y1="7" x2="7.01" y2="7" />
+        </svg>) to identify attentional capabilities in action. <strong>Watch out:</strong> not every icon marks a true
+        attentional mechanism, and some menu options are distractors.
+    </p>
+
+    <div class="story-card" id="story">
+        <p>
+            <span class="segment" data-answer="none">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                The regional rail control room hummed with the low, steady vibration of cooling fans and fluorescent
+                lights.
+            </span>
+            Maya sat before three curved monitors, her eyes tracing the green lines of the overnight freight schedule.
+            <span class="segment" data-answer="sustained">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                For the past two hours, she had tracked every mile marker of Train 404, holding her concentration steady
+                through the quietest stretch of the graveyard shift as the train crept across the flatlands.
+            </span>
+        </p>
+
+        <p>
+            <span class="segment" data-answer="selective">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                Across the room, a coffee machine hissed, a coworker laughed softly at a video on his phone, and the
+                police scanner crackled with routine street chatter. Maya let the background noise wash past her, tuning
+                out the room entirely to listen to the single, rhythmic static of the main dispatch radio strapped to
+                her headset.
+            </span>
+            <span class="segment" data-answer="none">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                Every few minutes, a conductor called in a standard checkpoint, and she logged the timestamp in her
+                digital sheet.
+            </span>
+        </p>
+
+        <p>
+            <span class="segment" data-answer="salience">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                At 2:14 a.m., a sharp, high-pitched chime pierced the ambient hum—a bright amber triangle flashing on
+                the upper-left corner of her secondary screen. Unlike the soft green pulses of normal traffic, the amber
+                icon pulsed rapidly, signaling an unexpected drop in track pressure thirty miles ahead of Train 404.
+            </span>
+        </p>
+
+        <p>
+            <span class="segment" data-answer="orienting">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                Maya’s head snapped toward the left monitor, her gaze locking onto the flashing coordinates.
+            </span>
+            Within a second, her fingers were already moving across the keyboard to pull up the sector’s sensor logs
+            while simultaneously keying her microphone to hail the Train 404 engineer.
+            <span class="segment" data-answer="divided">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                Trying to read the rapid stream of pressure telemetry while speaking clear instructions into her headset
+                proved difficult; she stumbled over a digit in the milepost number and had to pause her typing for two
+                seconds just to finish the radio transmission cleanly.
+            </span>
+        </p>
+
+        <p>
+            Once the engineer confirmed he was reducing speed,
+            <span class="segment" data-answer="control">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                Maya forced herself to look away from the blinking amber warning. Her primary goal now was routing the
+                incoming passenger express onto a safe bypass track before it reached the same junction. She
+                deliberately shifted her eyes back to the center screen, pulling up the switching matrix and locking out
+                the impulse to keep checking the pressure graph.
+            </span>
+        </p>
+
+        <p>
+            A new pop-up window slid onto the bottom of her display—an urgent email from upper management requesting a
+            shift-change report, accompanied by a loud desktop notification ping.
+            <span class="segment" data-answer="task_focus">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                Maya ignored the banner, refusing to let the administrative request pull her away from the switching
+                sequence until the bypass route turned solid blue and the passenger express was safely cleared.
+            </span>
+        </p>
+
+        <p>
+            <span class="segment" data-answer="none">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                With both trains stabilized, Maya leaned back in her ergonomic chair and took a slow sip of lukewarm
+                coffee.
+            </span>
+            <span class="segment" data-answer="vigilance">
+                <button type="button" class="tag-trigger" data-tooltip="Inspect & tag segment"></button>
+                Nothing was moving fast now, and the screens were mostly static gray lines, yet she kept scanning the
+                empty sectors—watching and waiting for the rare flicker of a stray sensor fault before the morning rush
+                began.
+            </span>
+        </p>
+    </div>
+
+    <div class="controls">
+        <button type="button" class="btn" onclick="evaluateAnswers()">Evaluate Tags</button>
+        <button type="button" class="btn secondary" onclick="resetAll()">Reset</button>
+        <span id="score-summary"></span>
+    </div>
+
+    <div class="popover-menu" id="popover"></div>
+
+
+    <script>
+        /* === PASTE SCRIPT PART HERE === */
+        const options = [
+            { value: "selective", label: "Selective Attention" },
+            { value: "sustained", label: "Sustained Attention" },
+            { value: "divided", label: "Divided Attention" },
+            { value: "vigilance", label: "Vigilance" },
+            { value: "control", label: "Attentional Control" },
+            { value: "salience", label: "Salience Detection" },
+            { value: "orienting", label: "Orienting" },
+            { value: "task_focus", label: "Task Focus" },
+            // Cognitive Distractor Options
+            { value: "distractor_episodic", label: "Episodic Memory Retrieval" },
+            { value: "distractor_habituation", label: "Sensory Habituation" },
+            { value: "distractor_rotation", label: "Mental Rotation" },
+            { value: "distractor_procedural", label: "Procedural Automaticity" }
+        ];
+
+        // Shuffle options once per page load so distractors blend naturally
+        const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+
+        const tagIconSVG = `
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+`;
+
+        const popover = document.getElementById("popover");
+        let activeSegment = null;
+
+        // Initialize segments and triggers
+        document.querySelectorAll(".segment").forEach(seg => {
+            seg.dataset.selected = "";
+            const btn = seg.querySelector(".tag-trigger");
+            btn.innerHTML = tagIconSVG;
+
+            const badge = document.createElement("span");
+            badge.className = "feedback-badge";
+            seg.appendChild(badge);
+
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                openPopover(seg, btn);
+            });
+        });
+
+        function buildPopover() {
+            popover.innerHTML = "";
+
+            const clearBtn = document.createElement("button");
+            clearBtn.type = "button";
+            clearBtn.className = "popover-option clear-opt";
+            clearBtn.textContent = "✕ Clear tag (Distractor / None)";
+            clearBtn.onclick = () => selectOption("", "");
+            popover.appendChild(clearBtn);
+
+            const header = document.createElement("div");
+            header.className = "popover-header";
+            header.textContent = "Select Cognitive Mechanism";
+            popover.appendChild(header);
+
+            shuffledOptions.forEach(opt => {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "popover-option";
+                item.textContent = opt.label;
+                item.onclick = () => selectOption(opt.value, opt.label);
+                popover.appendChild(item);
+            });
+        }
+
+        function openPopover(segment, triggerBtn) {
+            if (activeSegment === segment && popover.classList.contains("open")) {
+                closePopover();
+                return;
+            }
+            activeSegment = segment;
+            buildPopover();
+
+            const rect = triggerBtn.getBoundingClientRect();
+            popover.style.top = `${window.scrollY + rect.bottom + 6}px`;
+            popover.style.left = `${Math.min(window.scrollX + rect.left, window.innerWidth - 270)}px`;
+            popover.classList.add("open");
+        }
+
+        function closePopover() {
+            popover.classList.remove("open");
+            activeSegment = null;
+        }
+
+        function selectOption(value, label) {
+            if (!activeSegment) return;
+
+            const btn = activeSegment.querySelector(".tag-trigger");
+            activeSegment.dataset.selected = value;
+            activeSegment.classList.remove("correct", "incorrect", "false-alarm");
+
+            if (value) {
+                activeSegment.classList.add("tagged");
+                btn.classList.add("has-value");
+                btn.innerHTML = `${tagIconSVG} <span>${label}</span>`;
+                btn.dataset.tooltip = "Click to change or clear tag";
+            } else {
+                activeSegment.classList.remove("tagged");
+                btn.classList.remove("has-value");
+                btn.innerHTML = tagIconSVG;
+                btn.dataset.tooltip = "Inspect & tag segment";
+            }
+
+            closePopover();
+        }
+
+        document.addEventListener("click", (e) => {
+            if (!popover.contains(e.target)) {
+                closePopover();
+            }
+        });
+
+        function evaluateAnswers() {
+            let hits = 0;
+            let falseAlarms = 0;
+            const totalTargets = 8;
+
+            document.querySelectorAll(".segment").forEach(seg => {
+                const expected = seg.dataset.answer;
+                const chosen = seg.dataset.selected;
+                const badge = seg.querySelector(".feedback-badge");
+
+                seg.classList.remove("correct", "incorrect", "false-alarm");
+
+                if (expected === "none") {
+                    if (chosen !== "") {
+                        seg.classList.add("false-alarm");
+                        badge.textContent = "Distractor icon — no attentional event here";
+                        falseAlarms++;
+                    }
+                } else {
+                    const correctLabel = options.find(o => o.value === expected).label;
+                    if (chosen === expected) {
+                        seg.classList.add("correct");
+                        badge.textContent = "✓ Correct";
+                        hits++;
+                    } else {
+                        seg.classList.add("incorrect");
+                        badge.textContent = chosen === ""
+                            ? `Missed (${correctLabel})`
+                            : `Expected: ${correctLabel}`;
+                    }
+                }
+            });
+
+            document.getElementById("score-summary").textContent =
+                `Identified: ${hits}/${totalTargets} | False Alarms on Distractors: ${falseAlarms}/3`;
+        }
+
+        function resetAll() {
+            document.querySelectorAll(".segment").forEach(seg => {
+                seg.dataset.selected = "";
+                seg.className = "segment";
+                const btn = seg.querySelector(".tag-trigger");
+                btn.className = "tag-trigger";
+                btn.innerHTML = tagIconSVG;
+                btn.dataset.tooltip = "Inspect & tag segment";
+            });
+            document.getElementById("score-summary").textContent = "";
+            closePopover();
+        }
+
+    </script>
+
+</body>
+
+</html>

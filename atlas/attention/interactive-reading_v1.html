@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attention Capabilities Exercise</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.7;
+            max-width: 760px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #1e293b;
+            background: #f8fafc;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 0.25rem;
+        }
+
+        p.instructions {
+            color: #475569;
+            margin-bottom: 2rem;
+        }
+
+        .story-card {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .segment {
+            display: inline;
+            padding: 3px 6px;
+            border-radius: 6px;
+            transition: background-color 0.25s ease;
+        }
+
+        .segment.correct {
+            background-color: #dcfce7;
+            border-bottom: 2px solid #16a34a;
+        }
+
+        .segment.incorrect {
+            background-color: #fee2e2;
+            border-bottom: 2px solid #dc2626;
+        }
+
+        select.concept-select {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            margin-right: 6px;
+            border: 1.5px solid #94a3b8;
+            border-radius: 6px;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        select.concept-select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .controls {
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button.secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        #score {
+            font-weight: 600;
+            color: #0f172a;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>The Midnight Dispatch</h1>
+    <p class="instructions">Read the story and use the dropdown before each highlighted segment to match the correct
+        attentional capability.</p>
+
+    <div class="story-card" id="story">
+        <p>
+            The regional rail control room hummed with the low, steady vibration of cooling fans and fluorescent lights.
+            Maya sat before three curved monitors, her eyes tracing the green lines of the overnight freight schedule.
+            <span class="segment" data-answer="sustained">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                For the past two hours, she had tracked every mile marker of Train 404, holding her concentration steady
+                through the quietest stretch of the graveyard shift as the train crept across the flatlands.
+            </span>
+        </p>
+
+        <p>
+            <span class="segment" data-answer="selective">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                Across the room, a coffee machine hissed, a coworker laughed softly at a video on his phone, and the
+                police scanner crackled with routine street chatter. Maya let the background noise wash past her, tuning
+                out the room entirely to listen to the single, rhythmic static of the main dispatch radio strapped to
+                her headset.
+            </span>
+            Every few minutes, a conductor called in a standard checkpoint, and she logged the timestamp without
+            breaking her rhythm.
+        </p>
+
+        <p>
+            <span class="segment" data-answer="salience">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                At 2:14 a.m., a sharp, high-pitched chime pierced the ambient hum—a bright amber triangle flashing on
+                the upper-left corner of her secondary screen. Unlike the soft green pulses of normal traffic, the amber
+                icon pulsed rapidly, signaling an unexpected drop in track pressure thirty miles ahead of Train 404.
+            </span>
+        </p>
+
+        <p>
+            <span class="segment" data-answer="orienting">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                Maya’s head snapped toward the left monitor, her gaze locking onto the flashing coordinates.
+            </span>
+            Within a second, her fingers were already moving across the keyboard to pull up the sector’s sensor logs
+            while simultaneously keying her microphone to hail the Train 404 engineer.
+            <span class="segment" data-answer="divided">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                Trying to read the rapid stream of pressure telemetry while speaking clear instructions into her headset
+                proved difficult; she stumbled over a digit in the milepost number and had to pause her typing for two
+                seconds just to finish the radio transmission cleanly.
+            </span>
+        </p>
+
+        <p>
+            Once the engineer confirmed he was reducing speed,
+            <span class="segment" data-answer="control">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                Maya forced herself to look away from the blinking amber warning. Her primary goal now was routing the
+                incoming passenger express onto a safe bypass track before it reached the same junction. She
+                deliberately shifted her eyes back to the center screen, pulling up the switching matrix and locking out
+                the impulse to keep checking the pressure graph.
+            </span>
+        </p>
+
+        <p>
+            A new pop-up window slid onto the bottom of her display—an urgent email from upper management requesting a
+            shift-change report, accompanied by a loud desktop notification ping.
+            <span class="segment" data-answer="task_focus">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                Maya ignored the banner, refusing to let the administrative request pull her away from the switching
+                sequence until the bypass route turned solid blue and the passenger express was safely cleared.
+            </span>
+        </p>
+
+        <p>
+            With both trains stabilized, the control room fell quiet again. Maya leaned back, exhaled, and returned her
+            gaze to the wide-area grid.
+            <span class="segment" data-answer="vigilance">
+                <select class="concept-select" aria-label="Select attention type"></select>
+                Nothing was moving fast now, and the screens were mostly static gray lines, yet she kept scanning the
+                empty sectors—watching and waiting for the rare flicker of a stray sensor fault before the morning rush
+                began.
+            </span>
+        </p>
+    </div>
+
+    <div class="controls">
+        <button onclick="checkAnswers()">Check Answers</button>
+        <button class="secondary" onclick="resetQuiz()">Reset</button>
+        <span id="score"></span>
+    </div>
+
+    <script>
+        const concepts = [
+            { value: "", label: "-- Identify Capability --" },
+            { value: "selective", label: "Selective Attention" },
+            { value: "sustained", label: "Sustained Attention" },
+            { value: "divided", label: "Divided Attention" },
+            { value: "vigilance", label: "Vigilance" },
+            { value: "control", label: "Attentional Control" },
+            { value: "salience", label: "Salience Detection" },
+            { value: "orienting", label: "Orienting" },
+            { value: "task_focus", label: "Task Focus" }
+        ];
+
+        document.querySelectorAll(".concept-select").forEach(select => {
+            concepts.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.value;
+                opt.textContent = c.label;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener("change", () => {
+                select.parentElement.classList.remove("correct", "incorrect");
+            });
+        });
+
+        function checkAnswers() {
+            let correctCount = 0;
+            const segments = document.querySelectorAll(".segment");
+
+            segments.forEach(seg => {
+                const expected = seg.dataset.answer;
+                const chosen = seg.querySelector("select").value;
+                seg.classList.remove("correct", "incorrect");
+
+                if (chosen === expected) {
+                    seg.classList.add("correct");
+                    correctCount++;
+                } else if (chosen !== "") {
+                    seg.classList.add("incorrect");
+                }
+            });
+
+            document.getElementById("score").textContent =
+                `Score: ${correctCount} / ${segments.length}`;
+        }
+
+        function resetQuiz() {
+            document.querySelectorAll(".segment").forEach(seg => {
+                seg.classList.remove("correct", "incorrect");
+                seg.querySelector("select").value = "";
+            });
+            document.getElementById("score").textContent = "";
+        }
+    </script>
+
+</body>
+
+</html>

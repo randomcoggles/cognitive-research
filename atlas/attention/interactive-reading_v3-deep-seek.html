@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attention Systems — Reading Annotation Exercise</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --accent: #3b82f6;
+            --accent-light: #dbeafe;
+            --green: #10b981;
+            --green-light: #d1fae5;
+            --red: #ef4444;
+            --red-light: #fee2e2;
+            --amber: #f59e0b;
+            --amber-light: #fef3c7;
+            --border: #e2e8f0;
+            --radius: 10px;
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            padding: 24px 16px;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 28px 32px;
+            margin-bottom: 20px;
+        }
+
+        .story p {
+            margin: 0 0 14px;
+            font-size: 1.05rem;
+        }
+
+        .story p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ── Tag trigger button ── */
+        .tag-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            margin-right: 3px;
+            vertical-align: middle;
+            border: 1.5px solid var(--accent);
+            border-radius: 7px;
+            background: var(--accent-light);
+            color: var(--accent);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, transform 0.15s, border-color 0.2s;
+            position: relative;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .tag-trigger:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: scale(1.08);
+        }
+
+        .tag-trigger.tagged {
+            border-color: var(--green);
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .tag-trigger svg {
+            width: 13px;
+            height: 13px;
+            display: block;
+            pointer-events: none;
+        }
+
+        .tag-trigger .icon-tag {
+            display: block;
+        }
+
+        .tag-trigger .icon-check {
+            display: none;
+        }
+
+        .tag-trigger.tagged .icon-tag {
+            display: none;
+        }
+
+        .tag-trigger.tagged .icon-check {
+            display: block;
+        }
+
+        /* ── Tooltip ── */
+        .tag-trigger::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 140%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #fff;
+            font-size: 0.72rem;
+            padding: 4px 9px;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s;
+            font-weight: 400;
+        }
+
+        .tag-trigger:hover::after {
+            opacity: 1;
+        }
+
+        /* ── User-assigned label pill (shows what you picked) ── */
+        .assigned-label {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 9px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #fff;
+            margin-right: 6px;
+            vertical-align: middle;
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.35);
+            animation: pop 0.18s ease-out;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0.7);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ── Segment highlight states ── */
+        .segment {
+            border-radius: 3px;
+            padding: 1px 2px;
+            transition: background 0.25s;
+        }
+
+        .segment.selected {
+            background: var(--accent-light);
+        }
+
+        .segment.correct {
+            background: var(--green-light);
+        }
+
+        .segment.wrong {
+            background: var(--red-light);
+        }
+
+        .segment.false-alarm {
+            background: var(--amber-light);
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 1px 7px;
+            border-radius: 999px;
+            margin-left: 6px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .badge.correct {
+            background: var(--green);
+            color: #fff;
+        }
+
+        .badge.wrong {
+            background: var(--red);
+            color: #fff;
+        }
+
+        .badge.false-alarm {
+            background: var(--amber);
+            color: #fff;
+        }
+
+        /* ── Popover menu ── */
+        #popover {
+            position: absolute;
+            z-index: 1000;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+            padding: 6px;
+            min-width: 220px;
+            max-height: 320px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        #popover.open {
+            display: block;
+        }
+
+        .popover-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            cursor: pointer;
+            color: var(--text);
+            transition: background 0.15s;
+            font-family: inherit;
+        }
+
+        .popover-item:hover {
+            background: var(--accent-light);
+        }
+
+        .popover-item.clear {
+            color: var(--red);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            border-radius: 6px 6px 0 0;
+            margin-bottom: 4px;
+        }
+
+        .popover-item.active {
+            background: var(--accent-light);
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* ── Controls & score ── */
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text);
+        }
+
+        .score-panel {
+            margin-top: 18px;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .score-panel.visible {
+            display: block;
+        }
+
+        .score-line {
+            margin: 6px 0;
+        }
+
+        .score-line strong {
+            color: var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                padding: 20px 18px;
+            }
+
+            .story p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Attention Systems in the Kitchen</h1>
+        <p class="subtitle">
+            Read the story. Click each <strong>tag icon</strong> to label the attention system it represents.
+            Your chosen label will appear next to the icon and the matching sentence will be highlighted.
+            Some icons are distractors — mark those as <em>"Clear tag (Distractor / None)"</em>.
+        </p>
+
+        <div class="card story" id="story">
+            <p>
+                The dinner rush at "La Cocina" was in full swing. Chef Rosa stood at the pass,
+                her eyes locked on the sizzling pans of the grill line.
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="selective-attention"
+                    data-id="t1">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t1">She tuned out the clatter of dishes and the barked orders from the
+                    front of house, prioritizing the crackle of the steak over every other sound.</span>
+            </p>
+
+            <p>
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="none" data-id="d1">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="d1">The restaurant had been open for nearly forty years, and its worn
+                    wooden tables held the stories of a thousand family dinners.</span>
+                It was a legacy Rosa carried with pride.
+            </p>
+
+            <p>
+                For the next ninety minutes, she never let her focus drift.
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="sustained-attention"
+                    data-id="t2">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t2">She stayed locked on the rhythmic timing of each dish, maintaining
+                    her engagement through the relentless flow of orders.</span>
+            </p>
+
+            <p>
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="none" data-id="d2">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="d2">The kitchen walls were adorned with copper pots that gleamed under
+                    the warm pendant lights.</span>
+                They had been a gift from Rosa's grandmother.
+            </p>
+
+            <p>
+                Suddenly, a sharp change in pitch caught her ear — the faint, high hiss of steam escaping a pressure
+                valve.
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="salience-detection"
+                    data-id="t3">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t3">It was a subtle deviation from the usual kitchen hum, and her brain
+                    flagged it instantly as something that stood out and demanded attention.</span>
+            </p>
+
+            <p>
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="orienting"
+                    data-id="t4">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t4">Her head snapped toward the source, eyes shifting to the far corner
+                    of the stove where the valve hissed.</span>
+                In one fluid motion, she redirected her body and her gaze.
+            </p>
+
+            <p>
+                "Marco, handle the pasta!" she called out, already moving.
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="divided-attention"
+                    data-id="t5">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t5">Even as she crossed the kitchen, she kept one ear on the grill and
+                    another on Marco's progress, coordinating her attention across two demands at once — and she felt
+                    the cost of every split second.</span>
+            </p>
+
+            <p>
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="none" data-id="d3">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="d3">The kitchen's tiled floor was a faded terracotta, scuffed by years of
+                    hurried footsteps.</span>
+                A small charm hung by the doorway.
+            </p>
+
+            <p>
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="attentional-control"
+                    data-id="t6">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t6">She deliberately pulled her focus back to her goal — the safety of
+                    the line — and steered it away from the chaos erupting at the fry station.</span>
+                It was a conscious redirect.
+            </p>
+
+            <p>
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="vigilance"
+                    data-id="t7">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t7">All evening she had been quietly monitoring for the rare but critical
+                    signal of a timer about to expire — a low, almost imperceptible beep that meant a dish was seconds
+                    from burning.</span>
+            </p>
+
+            <p>
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="none" data-id="d4">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="d4">Outside the window, a delivery van rumbled past, its engine a low
+                    drone against the evening street.</span>
+            </p>
+
+            <p>
+                The beep came. Rosa lunged for the oven, yanked the tray out, and slid it onto the counter just in time.
+                <button class="tag-trigger" data-tooltip="Inspect &amp; tag segment" data-answer="task-focus"
+                    data-id="t8">
+                    <svg class="icon-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                    <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </button>
+                <span class="segment" data-id="t8">Despite the shouts and the clatter, she kept her priority fixed on
+                    the current objective: getting every plate out hot and on time.</span>
+            </p>
+
+            <p>
+                By the end of service, the kitchen was quiet. Rosa wiped her brow and smiled — she had held the line.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="controls">
+                <button class="btn btn-primary" id="evaluateBtn">Evaluate Tags</button>
+                <button class="btn btn-secondary" id="resetBtn">Reset</button>
+            </div>
+            <div class="score-panel" id="scorePanel">
+                <div class="score-line">✅ <strong>Hits:</strong> <span id="hitCount">0</span> / <span
+                        id="totalTargets">8</span></div>
+                <div class="score-line">⚠️ <strong>False Alarms:</strong> <span id="faCount">0</span> / <span
+                        id="totalDistractors">4</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="popover"></div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            var TARGET_CONCEPTS = [
+                "Selective Attention",
+                "Sustained Attention",
+                "Divided Attention",
+                "Vigilance",
+                "Attentional Control",
+                "Salience Detection",
+                "Orienting",
+                "Task Focus"
+            ];
+
+            var DISTRACTOR_CONCEPTS = [
+                "Working Memory Load",
+                "Perceptual Priming",
+                "Episodic Recall",
+                "Visual Acuity"
+            ];
+
+            var ANSWER_LABELS = {
+                "selective-attention": "Selective Attention",
+                "sustained-attention": "Sustained Attention",
+                "divided-attention": "Divided Attention",
+                "vigilance": "Vigilance",
+                "attentional-control": "Attentional Control",
+                "salience-detection": "Salience Detection",
+                "orienting": "Orienting",
+                "task-focus": "Task Focus",
+                "none": "Distractor / None"
+            };
+
+            var assignments = {};
+            var activeTriggerId = null;
+            var evaluated = false;
+
+            var MENU_OPTIONS = shuffle(TARGET_CONCEPTS.concat(DISTRACTOR_CONCEPTS));
+
+            function shuffle(arr) {
+                var a = arr.slice();
+                for (var i = a.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+                }
+                return a;
+            }
+
+            var popover = document.getElementById("popover");
+            var triggers = Array.prototype.slice.call(document.querySelectorAll(".tag-trigger"));
+            var segments = Array.prototype.slice.call(document.querySelectorAll(".segment"));
+            var evaluateBtn = document.getElementById("evaluateBtn");
+            var resetBtn = document.getElementById("resetBtn");
+            var scorePanel = document.getElementById("scorePanel");
+            var hitCountEl = document.getElementById("hitCount");
+            var faCountEl = document.getElementById("faCount");
+
+            var totalTargets = triggers.filter(function (t) { return t.dataset.answer !== "none"; }).length;
+            var totalDistractors = triggers.filter(function (t) { return t.dataset.answer === "none"; }).length;
+            document.getElementById("totalTargets").textContent = totalTargets;
+            document.getElementById("totalDistractors").textContent = totalDistractors;
+
+            function openPopover(trigger) {
+                activeTriggerId = trigger.dataset.id;
+                var rect = trigger.getBoundingClientRect();
+                popover.innerHTML = "";
+
+                var clearBtn = document.createElement("button");
+                clearBtn.className = "popover-item clear";
+                clearBtn.textContent = "✕ Clear tag (Distractor / None)";
+                clearBtn.addEventListener("click", function () {
+                    assign(activeTriggerId, null);
+                    closePopover();
+                });
+                popover.appendChild(clearBtn);
+
+                MENU_OPTIONS.forEach(function (label) {
+                    var btn = document.createElement("button");
+                    btn.className = "popover-item";
+                    btn.textContent = label;
+                    // Show which option is currently selected
+                    if (assignments[activeTriggerId] === label) {
+                        btn.classList.add("active");
+                    }
+                    btn.addEventListener("click", function () {
+                        assign(activeTriggerId, label);
+                        closePopover();
+                    });
+                    popover.appendChild(btn);
+                });
+
+                popover.classList.add("open");
+
+                var popW = popover.offsetWidth;
+                var popH = popover.offsetHeight;
+                var scrollX = window.scrollX || window.pageXOffset;
+                var scrollY = window.scrollY || window.pageYOffset;
+                var viewW = document.documentElement.clientWidth;
+                var viewH = document.documentElement.clientHeight;
+
+                var left = rect.left + scrollX;
+                var top = rect.bottom + scrollY + 6;
+
+                if (left + popW > scrollX + viewW - 8) left = scrollX + viewW - popW - 8;
+                if (left < 8) left = 8;
+                if (top + popH > scrollY + viewH - 8) top = rect.top + scrollY - popH - 6;
+
+                popover.style.left = left + "px";
+                popover.style.top = top + "px";
+            }
+
+            function closePopover() {
+                popover.classList.remove("open");
+                activeTriggerId = null;
+            }
+
+            document.addEventListener("click", function (e) {
+                if (!popover.classList.contains("open")) return;
+                if (popover.contains(e.target)) return;
+                if (e.target.closest && e.target.closest(".tag-trigger")) return;
+                closePopover();
+            });
+
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") closePopover();
+            });
+
+            function assign(id, label) {
+                assignments[id] = label;
+                updateVisual(id);
+            }
+
+            function updateVisual(id) {
+                var trigger = triggers.filter(function (t) { return t.dataset.id === id; })[0];
+                var segment = segments.filter(function (s) { return s.dataset.id === id; })[0];
+                if (!trigger || !segment) return;
+
+                // Remove evaluation classes
+                segment.classList.remove("selected", "correct", "wrong", "false-alarm");
+                // Remove old evaluation badge
+                var oldBadge = segment.querySelector(".badge");
+                if (oldBadge) oldBadge.remove();
+
+                // Remove old assigned-label pill
+                var oldPill = trigger.parentNode.querySelector('.assigned-label[data-for="' + id + '"]');
+                if (oldPill) oldPill.remove();
+
+                var label = assignments[id];
+
+                if (!label) {
+                    trigger.classList.remove("tagged");
+                    return;
+                }
+
+                trigger.classList.add("tagged");
+                if (!evaluated) segment.classList.add("selected");
+
+                // Insert the chosen label as a visible pill right after the trigger button
+                var pill = document.createElement("span");
+                pill.className = "assigned-label";
+                pill.setAttribute("data-for", id);
+                pill.textContent = label;
+                trigger.parentNode.insertBefore(pill, trigger.nextSibling);
+            }
+
+            triggers.forEach(function (trigger) {
+                trigger.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    if (popover.classList.contains("open") && activeTriggerId === trigger.dataset.id) {
+                        closePopover();
+                    } else {
+                        openPopover(trigger);
+                    }
+                });
+            });
+
+            evaluateBtn.addEventListener("click", function () {
+                evaluated = true;
+                var hits = 0;
+                var falseAlarms = 0;
+
+                triggers.forEach(function (trigger) {
+                    var id = trigger.dataset.id;
+                    var answer = trigger.dataset.answer;
+                    var segment = segments.filter(function (s) { return s.dataset.id === id; })[0];
+                    var userLabel = assignments[id] || null;
+
+                    // Clean state but keep the assigned-label pill visible
+                    segment.classList.remove("selected", "correct", "wrong", "false-alarm");
+                    var oldBadge = segment.querySelector(".badge");
+                    if (oldBadge) oldBadge.remove();
+
+                    if (answer === "none") {
+                        if (userLabel && userLabel !== "Distractor / None") {
+                            falseAlarms++;
+                            segment.classList.add("false-alarm");
+                            addBadge(segment, "false-alarm", "⚠️ Distractor icon — no target event here");
+                        }
+                        return;
+                    }
+
+                    if (!userLabel) {
+                        segment.classList.add("wrong");
+                        addBadge(segment, "wrong", "✗ Missed — expected: " + ANSWER_LABELS[answer]);
+                        return;
+                    }
+
+                    if (userLabel === "Distractor / None") {
+                        segment.classList.add("wrong");
+                        addBadge(segment, "wrong", "✗ Wrong — expected: " + ANSWER_LABELS[answer]);
+                        return;
+                    }
+
+                    if (userLabel === ANSWER_LABELS[answer]) {
+                        hits++;
+                        segment.classList.add("correct");
+                        addBadge(segment, "correct", "✓ Correct");
+                    } else {
+                        segment.classList.add("wrong");
+                        addBadge(segment, "wrong", "✗ Wrong — expected: " + ANSWER_LABELS[answer]);
+                    }
+                });
+
+                hitCountEl.textContent = hits;
+                faCountEl.textContent = falseAlarms;
+                scorePanel.classList.add("visible");
+            });
+
+            function addBadge(segment, type, text) {
+                var badge = document.createElement("span");
+                badge.className = "badge " + type;
+                badge.textContent = text;
+                segment.appendChild(badge);
+            }
+
+            resetBtn.addEventListener("click", function () {
+                evaluated = false;
+                for (var key in assignments) { if (assignments.hasOwnProperty(key)) delete assignments[key]; }
+
+                triggers.forEach(function (trigger) {
+                    trigger.classList.remove("tagged");
+                });
+
+                // Remove all assigned-label pills
+                document.querySelectorAll(".assigned-label").forEach(function (p) { p.remove(); });
+
+                segments.forEach(function (segment) {
+                    segment.classList.remove("selected", "correct", "wrong", "false-alarm");
+                    var badge = segment.querySelector(".badge");
+                    if (badge) badge.remove();
+                });
+
+                scorePanel.classList.remove("visible");
+                hitCountEl.textContent = "0";
+                faCountEl.textContent = "0";
+
+                closePopover();
+            });
+        })();
+    </script>
+</body>
+
+</html>

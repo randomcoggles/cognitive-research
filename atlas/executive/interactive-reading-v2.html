@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Systems — Narrative Annotation (v2)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --page: #f3f1ea;
+    --surface: #fffdf8;
+    --surface-soft: #e9eee7;
+    --ink: #19372f;
+    --muted: #5b6d67;
+    --line: #cfd9d2;
+    --accent: #c56f33;
+    --accent-soft: #f4dfcf;
+    --domain: #4d91a4;
+    --domain-soft: #e3eef1;
+    --success: #2f7459;
+    --success-soft: #dcefe6;
+    --warning: #9c641e;
+    --warning-soft: #f8ecd8;
+    --danger: #a33a2c;
+    --danger-soft: #f7e0dc;
+    --radius: 12px;
+    --shadow: 0 10px 30px rgba(27, 55, 45, 0.09);
+  }
+
+  body {
+    margin: 0;
+    padding: 28px 16px 64px;
+    font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    line-height: 1.65;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; }
+
+  /* ---------- header ---------- */
+  .page-head { margin-bottom: 22px; }
+  .eyebrow {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  h1 { margin: 0 0 8px; font-size: 1.7rem; letter-spacing: -0.02em; }
+  .standfirst { margin: 0; max-width: 62ch; color: var(--muted); font-size: 0.95rem; }
+
+  /* ---------- story tabs ---------- */
+  .story-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 22px 0 16px;
+  }
+  .story-tab {
+    padding: 9px 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .story-tab:hover { border-color: var(--domain); }
+  .story-tab[aria-selected="true"] {
+    border-color: var(--domain);
+    background: var(--domain-soft);
+  }
+  .story-tab .tab-meta {
+    margin-left: 7px;
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+  }
+
+  /* ---------- cards ---------- */
+  .card {
+    padding: 26px 30px;
+    margin-bottom: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .instructions {
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    border-left: 3px solid var(--domain);
+    border-radius: 0 8px 8px 0;
+    background: var(--domain-soft);
+    font-size: 0.86rem;
+  }
+  .instructions p { margin: 0 0 8px; }
+  .instructions p:last-child { margin-bottom: 0; }
+  .instructions strong { font-weight: 800; }
+
+  /* ---------- story text ---------- */
+  .story p { margin: 0 0 16px; font-size: 1.04rem; }
+  .story p:last-child { margin-bottom: 0; }
+
+  .segment {
+    border-radius: 4px;
+    padding: 1px 2px;
+    transition: background 0.2s;
+  }
+  .segment.tagged   { background: var(--domain-soft); }
+  .segment.correct  { background: var(--success-soft); }
+  .segment.wrong    { background: var(--danger-soft); }
+  .segment.rejected { background: var(--warning-soft); }
+
+  /* ---------- tag button ---------- */
+  .tag-trigger {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 21px;
+    margin-right: 5px;
+    padding: 0 7px;
+    vertical-align: middle;
+    border: 1.5px solid var(--domain);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--domain);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  /* Expands the touch target to 44px without disturbing line layout. */
+  .tag-trigger::before {
+    content: "";
+    position: absolute;
+    inset: -12px -8px;
+  }
+  .tag-trigger:hover,
+  .tag-trigger:focus-visible {
+    background: var(--domain);
+    color: #fff;
+    outline: none;
+  }
+  .tag-trigger:focus-visible { box-shadow: 0 0 0 3px var(--domain-soft); }
+  .tag-trigger.tagged {
+    background: var(--domain);
+    border-color: var(--domain);
+    color: #fff;
+  }
+  .tag-trigger .icon-tag {
+    width: 12px;
+    height: 12px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+  .tag-trigger .trigger-text { pointer-events: none; white-space: nowrap; }
+
+  /* ---------- popover ---------- */
+  #popover {
+    position: absolute;
+    z-index: 1000;
+    display: none;
+    min-width: 250px;
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 12px 34px rgba(27, 55, 45, 0.18);
+  }
+  #popover.open { display: block; }
+
+  .popover-group {
+    padding: 8px 12px 4px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .popover-item {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.87rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .popover-item:hover,
+  .popover-item:focus-visible {
+    background: var(--domain-soft);
+    outline: none;
+  }
+  .popover-item[aria-selected="true"] {
+    background: var(--domain-soft);
+    color: var(--domain);
+    font-weight: 800;
+  }
+  .popover-item.special {
+    color: var(--muted);
+    font-style: italic;
+  }
+  .popover-item.special:hover { color: var(--ink); }
+  .popover-sep {
+    height: 1px;
+    margin: 5px 8px;
+    background: var(--line);
+  }
+
+  /* ---------- feedback ---------- */
+  .feedback {
+    display: block;
+    margin: 7px 0 0;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+  .feedback.correct  { background: var(--success-soft); border-left: 3px solid var(--success); }
+  .feedback.wrong    { background: var(--danger-soft);  border-left: 3px solid var(--danger); }
+  .feedback.rejected { background: var(--warning-soft); border-left: 3px solid var(--warning); }
+  .feedback .fb-head { display: block; font-weight: 800; margin-bottom: 3px; }
+  .feedback .fb-def  { display: block; color: var(--muted); }
+  .feedback .fb-confusion {
+    display: block;
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px dashed rgba(0,0,0,0.12);
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  /* ---------- controls ---------- */
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn {
+    padding: 11px 22px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn-primary   { background: var(--domain); color: #fff; }
+  .btn-secondary { background: var(--surface-soft); color: var(--ink); border-color: var(--line); }
+  .btn-ghost     { background: transparent; color: var(--muted); border-color: var(--line); }
+
+  /* ---------- score ---------- */
+  .score-panel { display: none; margin-top: 20px; }
+  .score-panel.visible { display: block; }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .score-cell {
+    padding: 13px 15px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--page);
+  }
+  .score-cell .label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .score-cell .value { display: block; margin-top: 3px; font-size: 1.35rem; font-weight: 800; }
+  .score-cell.good .value { color: var(--success); }
+  .score-cell.bad  .value { color: var(--danger); }
+
+  .verdict {
+    padding: 13px 16px;
+    border-radius: 10px;
+    background: var(--surface-soft);
+    font-size: 0.87rem;
+  }
+  .verdict strong { font-weight: 800; }
+
+  .confusion-list { margin: 14px 0 0; padding: 0; list-style: none; }
+  .confusion-list li {
+    padding: 9px 0;
+    border-top: 1px solid var(--line);
+    font-size: 0.84rem;
+  }
+  .confusion-list li:first-child { border-top: 0; }
+  .confusion-list .pair { font-weight: 800; }
+
+  /* ---------- legend ---------- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 0.76rem;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  @media (max-width: 620px) {
+    .card { padding: 20px 18px; }
+    .story p { font-size: 1rem; }
+    h1 { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="page-head">
+    <p class="eyebrow">Executive Systems · Narrative annotation</p>
+    <h1>Find the executive event</h1>
+    <p class="standfirst">
+      Two stories, eight executive functions, four decoys. Label the passages where an executive
+      function is actually operating — and leave the rest alone.
+    </p>
+  </header>
+
+  <div class="story-tabs" role="tablist" aria-label="Choose a story">
+    <button class="story-tab" role="tab" data-story="kitchen" aria-selected="true">
+      The kitchen <span class="tab-meta" data-progress="kitchen"></span>
+    </button>
+    <button class="story-tab" role="tab" data-story="theatre" aria-selected="false">
+      The theatre <span class="tab-meta" data-progress="theatre"></span>
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="instructions">
+      <p><strong>How this works.</strong> Click a tag button to label the passage that follows it.
+      The passage describes an <em>action</em> — you decide which executive function, if any, it shows.</p>
+      <p><strong>Two ways to say "nothing here".</strong> <em>No executive event</em> is a claim:
+      you are asserting the passage is not executive. <em>Skip</em> means you are unsure and do not
+      want to guess. Only the first can count as a false alarm.</p>
+      <p><strong>Definitions appear after you commit.</strong> That is deliberate — the point is to
+      recognise the behaviour, not to match a definition to a label.</p>
+    </div>
+
+    <div class="story" id="story" role="tabpanel"></div>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <button class="btn btn-primary" id="evaluateBtn">Evaluate</button>
+      <button class="btn btn-secondary" id="revealBtn">Reveal answers</button>
+      <button class="btn btn-ghost" id="resetBtn">Reset this story</button>
+    </div>
+
+    <div class="score-panel" id="scorePanel">
+      <div class="score-grid" id="scoreGrid"></div>
+      <div class="verdict" id="verdict"></div>
+      <ul class="confusion-list" id="confusionList"></ul>
+    </div>
+
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--success-soft)"></i> correct</span>
+      <span><i class="swatch" style="background:var(--danger-soft)"></i> wrong or missed</span>
+      <span><i class="swatch" style="background:var(--warning-soft)"></i> false alarm</span>
+    </div>
+  </div>
+
+</div>
+
+<div id="popover" role="listbox" aria-label="Choose a label"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     DATA
+     Each paragraph is an array of parts. A part is either a plain
+     string or a segment object: { id, answer, text }.
+     answer is a construct key, or "none" for a decoy passage.
+     ============================================================ */
+
+  var CONSTRUCTS = {
+    "planning": {
+      label: "Planning",
+      definition: "Sequencing future steps in advance — setting sub-goals and ordering them before acting.",
+      confusable: ["goal-management"]
+    },
+    "inhibitory-control": {
+      label: "Inhibitory Control",
+      definition: "Suppressing an automatic but wrong response; stopping an impulse before it becomes an action.",
+      confusable: ["cognitive-flexibility"]
+    },
+    "task-switching": {
+      label: "Task Switching",
+      definition: "Rapidly alternating between concurrent tasks, shifting focus from one demand to the next.",
+      confusable: ["cognitive-flexibility"]
+    },
+    "working-memory-updating": {
+      label: "Working Memory Updating",
+      definition: "Continuously updating and manipulating information held in a short-term store.",
+      confusable: ["monitoring"]
+    },
+    "monitoring": {
+      label: "Monitoring",
+      definition: "Checking the current state against the goal to verify you are still on track.",
+      confusable: ["error-detection"]
+    },
+    "error-detection": {
+      label: "Error Detection",
+      definition: "Noticing a specific mismatch between the outcome and the intended goal, then correcting.",
+      confusable: ["monitoring"]
+    },
+    "cognitive-flexibility": {
+      label: "Cognitive Flexibility",
+      definition: "Abandoning a plan and reorganising strategy when the constraints change.",
+      confusable: ["task-switching", "planning"]
+    },
+    "goal-management": {
+      label: "Goal Management",
+      definition: "Keeping the overarching objective in view while reprioritising sub-goals as conditions change.",
+      confusable: ["planning"]
+    }
+  };
+
+  // Never correct. Present so the menu is not a process of elimination.
+  var DECOYS = ["Sustained Attention", "Episodic Memory", "Perceptual Priming", "Lexical Access"];
+
+  var STORIES = {
+    kitchen: {
+      title: "The kitchen",
+      paragraphs: [
+        ["The dinner rush had barely begun when the printer spat out twelve tickets at once. Chef Rosa stood still for a second, then ",
+         { id: "k1", answer: "planning", text: "fired the risotto first, held the fish, and staggered the appetizers" }, "."],
+
+        [{ id: "k2", answer: "none", text: "She noticed the copper pots had dulled since the morning polish" },
+         ". A small framed photo of the original owner hung near the doorway."],
+
+        ["A server shouted an order across the pass. ",
+         { id: "k3", answer: "inhibitory-control", text: "Rosa's hand twitched toward the wrong pan, but she caught herself and held the intended sequence" }, "."],
+
+        ["Meanwhile, three pans sizzled at different rates. ",
+         { id: "k4", answer: "task-switching", text: "She flipped the fish, stirred the sauce, and adjusted the oven dial" },
+         " — all in one fluid sweep."],
+
+        [{ id: "k5", answer: "none", text: "She remembered that the delivery van usually came on Tuesdays" },
+         ". Outside, the street was quiet."],
+
+        ["The ticket rail was a blur of orders, but ",
+         { id: "k6", answer: "working-memory-updating", text: "she kept the full sequence for table seven in her mind while working on table four" }, "."],
+
+        [{ id: "k7", answer: "monitoring", text: "She tasted each sauce, watched the colour of the fish, and adjusted the flame" },
+         " to keep every dish on schedule."],
+
+        [{ id: "k8", answer: "none", text: "The terracotta floor reminded her of her grandmother's kitchen" },
+         ". She smiled and kept moving."],
+
+        ["Halfway through, ",
+         { id: "k9", answer: "error-detection", text: "she realised the fish was undersalted, compared it to the standard she held in mind, and corrected the seasoning" }, "."],
+
+        ["When the supplier's delivery was late, ",
+         { id: "k10", answer: "cognitive-flexibility", text: "she abandoned her original plan and reorganised the menu on the fly" }, "."],
+
+        [{ id: "k11", answer: "none", text: "She recognised a regular at table nine from last month" },
+         ". He ordered the same thing as before."],
+
+        ["A fuse blew, plunging the line into dim emergency light. ",
+         { id: "k12", answer: "goal-management", text: "Rosa redirected the team, reassigned stations, and kept the service moving" }, "."]
+      ]
+    },
+
+    theatre: {
+      title: "The theatre",
+      paragraphs: [
+        ["The patient arrived with a lacerated artery and falling pressure. Dr. Amara ",
+         { id: "t1", answer: "planning", text: "mapped the sequence: control the bleeding, repair the vessel, then close" }, "."],
+
+        [{ id: "t2", answer: "none", text: "She recalled the patient's chart from the morning round" },
+         ". The theatre lights hummed overhead."],
+
+        ["Her hand moved toward the wrong clamp. ",
+         { id: "t3", answer: "inhibitory-control", text: "She stopped, drew her hand back, and reached for the correct one" }, "."],
+
+        [{ id: "t4", answer: "task-switching", text: "She moved between the monitor, the suction, and the suture line" },
+         " as the anaesthetist called out new numbers."],
+
+        [{ id: "t5", answer: "none", text: "The overhead light flickered once and steadied" },
+         ". Nobody looked up."],
+
+        [{ id: "t6", answer: "working-memory-updating", text: "She held the patient's allergies and the last blood pressure in mind while the anaesthetist called new values" }, "."],
+
+        [{ id: "t7", answer: "monitoring", text: "She checked the drain output against the expected rate" },
+         " and noted it was within range."],
+
+        [{ id: "t8", answer: "none", text: "The instrument tray reminded her of her first solo operation" },
+         ". She kept her hands steady."],
+
+        [{ id: "t9", answer: "error-detection", text: "She noticed the sponge count was one short and called for a recount" }, "."],
+
+        ["When the graft failed, ",
+         { id: "t10", answer: "cognitive-flexibility", text: "she abandoned the bypass and switched to a direct repair" }, "."],
+
+        [{ id: "t11", answer: "none", text: "She recognised the scrub nurse from a previous case" },
+         ". They worked without speaking."],
+
+        ["Bleeding resumed. ",
+         { id: "t12", answer: "goal-management", text: "She kept the objective — stabilise the patient — in view while reprioritising as the field changed" }, "."]
+      ]
+    }
+  };
+
+  var STORAGE_KEY = "atlas-cognition:annotation:executive:v2";
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+
+  var state = {
+    story: "kitchen",
+    assignments: { kitchen: {}, theatre: {} },
+    evaluated: { kitchen: false, theatre: false },
+    revealed: { kitchen: false, theatre: false }
+  };
+
+  function loadState() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (saved && saved.assignments) {
+        state.assignments = saved.assignments;
+        state.evaluated = saved.evaluated || state.evaluated;
+        state.revealed = saved.revealed || state.revealed;
+        if (saved.story && STORIES[saved.story]) state.story = saved.story;
+      }
+    } catch (e) { /* corrupt storage is not fatal */ }
+  }
+
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+
+  /* ============================================================
+     DOM HELPERS
+     ============================================================ */
+
+  var storyEl = document.getElementById("story");
+  var popover = document.getElementById("popover");
+  var scorePanel = document.getElementById("scorePanel");
+  var scoreGrid = document.getElementById("scoreGrid");
+  var verdictEl = document.getElementById("verdict");
+  var confusionList = document.getElementById("confusionList");
+
+  var activeTriggerId = null;
+  var activeStoryId = null;
+
+  function segmentsOf(storyId) {
+    var out = [];
+    STORIES[storyId].paragraphs.forEach(function (parts) {
+      parts.forEach(function (part) {
+        if (typeof part === "object") out.push(part);
+      });
+    });
+    return out;
+  }
+
+  function segmentById(storyId, id) {
+    return segmentsOf(storyId).filter(function (s) { return s.id === id; })[0] || null;
+  }
+
+  function labelFor(key) {
+    if (key === "none") return "No executive event";
+    return CONSTRUCTS[key] ? CONSTRUCTS[key].label : key;
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+
+  function renderStory() {
+    var story = STORIES[state.story];
+    var assignments = state.assignments[state.story];
+    var evaluated = state.evaluated[state.story];
+    var revealed = state.revealed[state.story];
+
+    storyEl.innerHTML = "";
+
+    story.paragraphs.forEach(function (parts) {
+      var p = document.createElement("p");
+
+      parts.forEach(function (part) {
+        if (typeof part === "string") {
+          p.appendChild(document.createTextNode(part));
+          return;
+        }
+
+        var seg = document.createElement("span");
+        seg.className = "segment";
+        seg.dataset.id = part.id;
+
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tag-trigger";
+        btn.dataset.id = part.id;
+        btn.setAttribute("aria-haspopup", "listbox");
+        btn.setAttribute("aria-expanded", "false");
+
+        var assigned = assignments[part.id];
+        var shown = assigned ? labelFor(assigned) : "Tag";
+        btn.setAttribute("aria-label", "Label this passage" + (assigned ? " — currently " + shown : ""));
+
+        btn.innerHTML =
+          '<svg class="icon-tag" viewBox="0 0 24 24" aria-hidden="true">' +
+          '<path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/>' +
+          '<line x1="7" y1="7" x2="7.01" y2="7"/></svg>' +
+          '<span class="trigger-text">' + escapeHtml(shown) + "</span>";
+
+        if (assigned) btn.classList.add("tagged");
+
+        seg.appendChild(btn);
+        seg.appendChild(document.createTextNode(" " + part.text));
+        p.appendChild(seg);
+
+        if (evaluated || revealed) {
+          seg.appendChild(buildFeedback(part, assigned, evaluated));
+        }
+      });
+
+      storyEl.appendChild(p);
+    });
+
+    // tab state
+    document.querySelectorAll(".story-tab").forEach(function (tab) {
+      tab.setAttribute("aria-selected", String(tab.dataset.story === state.story));
+    });
+
+    updateTabProgress();
+    renderScore();
+  }
+
+  function buildFeedback(part, assigned, evaluated) {
+    var fb = document.createElement("span");
+    var isTarget = part.answer !== "none";
+    var correct = assigned === part.answer;
+    var skipped = !assigned;
+
+    if (isTarget) {
+      if (correct) {
+        fb.className = "feedback correct";
+        fb.innerHTML = '<span class="fb-head">✓ ' + escapeHtml(CONSTRUCTS[part.answer].label) + "</span>" +
+                       '<span class="fb-def">' + escapeHtml(CONSTRUCTS[part.answer].definition) + "</span>";
+      } else {
+        fb.className = "feedback wrong";
+        var head = skipped
+          ? "✗ Not labelled — this is " + CONSTRUCTS[part.answer].label
+          : "✗ You chose " + labelFor(assigned) + " — this is " + CONSTRUCTS[part.answer].label;
+        fb.innerHTML = '<span class="fb-head">' + escapeHtml(head) + "</span>" +
+                       '<span class="fb-def">' + escapeHtml(CONSTRUCTS[part.answer].definition) + "</span>" +
+                       confusionNote(assigned, part.answer);
+      }
+    } else {
+      if (assigned === "none") {
+        fb.className = "feedback correct";
+        fb.innerHTML = '<span class="fb-head">✓ Correctly left alone</span>' +
+                       '<span class="fb-def">This passage is cognitive but not executive — it belongs to another system.</span>';
+      } else if (skipped) {
+        fb.className = "feedback rejected";
+        fb.innerHTML = '<span class="fb-head">— Skipped</span>' +
+                       '<span class="fb-def">No executive event here. Skipping is not penalised as a false alarm.</span>';
+      } else {
+        fb.className = "feedback rejected";
+        fb.innerHTML = '<span class="fb-head">⚠ False alarm — you labelled this ' + escapeHtml(labelFor(assigned)) + "</span>" +
+                       '<span class="fb-def">This passage is cognitive but not executive. Labelling everything is the failure mode this exercise is designed to catch.</span>';
+      }
+    }
+    return fb;
+  }
+
+  function confusionNote(chosen, actual) {
+    if (!chosen || chosen === "none" || !CONSTRUCTS[chosen]) return "";
+    var a = CONSTRUCTS[chosen];
+    var b = CONSTRUCTS[actual];
+    if (a.confusable.indexOf(actual) === -1 && b.confusable.indexOf(chosen) === -1) return "";
+    return '<span class="fb-confusion"><strong>Common confusion:</strong> ' +
+           escapeHtml(a.label) + " vs " + escapeHtml(b.label) + " — " +
+           escapeHtml(a.definition) + " Compare with: " + escapeHtml(b.definition) + "</span>";
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  /* ============================================================
+     POPOVER
+     ============================================================ */
+
+  function openPopover(trigger) {
+    activeTriggerId = trigger.dataset.id;
+    activeStoryId = state.story;
+    var current = state.assignments[state.story][activeTriggerId] || null;
+
+    popover.innerHTML = "";
+
+    var groupA = document.createElement("div");
+    groupA.className = "popover-group";
+    groupA.textContent = "Executive functions";
+    popover.appendChild(groupA);
+
+    Object.keys(CONSTRUCTS).forEach(function (key) {
+      popover.appendChild(makeOption(key, CONSTRUCTS[key].label, current === key, false));
+    });
+
+    var sep = document.createElement("div");
+    sep.className = "popover-sep";
+    popover.appendChild(sep);
+
+    var groupB = document.createElement("div");
+    groupB.className = "popover-group";
+    groupB.textContent = "Other systems (never correct)";
+    popover.appendChild(groupB);
+
+    DECOYS.forEach(function (label) {
+      popover.appendChild(makeOption("decoy:" + label, label, false, true));
+    });
+
+    var sep2 = document.createElement("div");
+    sep2.className = "popover-sep";
+    popover.appendChild(sep2);
+
+    popover.appendChild(makeOption("none", "No executive event here", current === "none", false));
+    popover.appendChild(makeOption("skip", "Skip — not sure", false, true));
+
+    popover.classList.add("open");
+    trigger.setAttribute("aria-expanded", "true");
+    positionPopover(trigger);
+
+    var first = popover.querySelector(".popover-item");
+    if (first) first.focus();
+  }
+
+  function makeOption(value, label, selected, special) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "popover-item" + (special ? " special" : "");
+    btn.setAttribute("role", "option");
+    btn.setAttribute("aria-selected", String(selected));
+    btn.dataset.value = value;
+    btn.textContent = label;
+    btn.addEventListener("click", function () {
+      choose(value);
+    });
+    return btn;
+  }
+
+  function choose(value) {
+    if (!activeTriggerId) return;
+    var assignments = state.assignments[activeStoryId];
+
+    if (value === "skip") {
+      delete assignments[activeTriggerId];
+    } else if (value.indexOf("decoy:") === 0) {
+      // A decoy is a real claim, so it counts as a false alarm if wrong.
+      assignments[activeTriggerId] = value.slice(6);
+    } else {
+      assignments[activeTriggerId] = value;
+    }
+
+    state.evaluated[activeStoryId] = false;
+    state.revealed[activeStoryId] = false;
+    saveState();
+    closePopover();
+    renderStory();
+  }
+
+  function closePopover() {
+    popover.classList.remove("open");
+    document.querySelectorAll(".tag-trigger[aria-expanded='true']").forEach(function (t) {
+      t.setAttribute("aria-expanded", "false");
+    });
+    activeTriggerId = null;
+  }
+
+  function positionPopover(trigger) {
+    var rect = trigger.getBoundingClientRect();
+    var scrollX = window.scrollX || window.pageXOffset;
+    var scrollY = window.scrollY || window.pageYOffset;
+    var viewW = document.documentElement.clientWidth;
+    var viewH = document.documentElement.clientHeight;
+
+    popover.style.left = "0px";
+    popover.style.top = "0px";
+    var w = popover.offsetWidth;
+    var h = popover.offsetHeight;
+
+    var left = rect.left + scrollX;
+    var top = rect.bottom + scrollY + 8;
+
+    if (left + w > scrollX + viewW - 10) left = scrollX + viewW - w - 10;
+    if (left < 10) left = 10;
+    if (top + h > scrollY + viewH - 10) top = rect.top + scrollY - h - 8;
+    if (top < scrollY + 10) top = scrollY + 10;
+
+    popover.style.left = left + "px";
+    popover.style.top = top + "px";
+  }
+
+  /* ============================================================
+     SCORING
+     ============================================================ */
+
+  function scoreStory(storyId) {
+    var assignments = state.assignments[storyId];
+    var segs = segmentsOf(storyId);
+    var s = { hits: 0, targets: 0, falseAlarms: 0, decoys: 0, misses: 0, correctRejections: 0, skipped: 0 };
+
+    segs.forEach(function (seg) {
+      var assigned = assignments[seg.id] || null;
+      if (seg.answer === "none") {
+        s.decoys++;
+        if (assigned === "none") s.correctRejections++;
+        else if (!assigned) s.skipped++;
+        else s.falseAlarms++;
+      } else {
+        s.targets++;
+        if (assigned === seg.answer) s.hits++;
+        else s.misses++;
+      }
+    });
+
+    return s;
+  }
+
+  function renderScore() {
+    var storyId = state.story;
+    var evaluated = state.evaluated[storyId];
+    var revealed = state.revealed[storyId];
+
+    if (!evaluated && !revealed) {
+      scorePanel.classList.remove("visible");
+      return;
+    }
+
+    var s = scoreStory(storyId);
+    scorePanel.classList.add("visible");
+
+    scoreGrid.innerHTML = [
+      cell("Hits", s.hits + " / " + s.targets, s.hits === s.targets ? "good" : ""),
+      cell("Misses", s.misses + " / " + s.targets, s.misses === 0 ? "good" : "bad"),
+      cell("False alarms", s.falseAlarms + " / " + s.decoys, s.falseAlarms === 0 ? "good" : "bad"),
+      cell("Correct rejections", s.correctRejections + " / " + s.decoys, s.correctRejections === s.decoys ? "good" : "")
+    ].join("");
+
+    verdictEl.innerHTML = buildVerdict(s);
+    confusionList.innerHTML = buildConfusionList(storyId);
+  }
+
+  function cell(label, value, cls) {
+    return '<div class="score-cell ' + cls + '"><span class="label">' + label +
+           '</span><span class="value">' + value + "</span></div>";
+  }
+
+  function buildVerdict(s) {
+    var precision = s.hits + s.falseAlarms > 0
+      ? Math.round(s.hits / (s.hits + s.falseAlarms) * 100)
+      : 0;
+
+    var text;
+    if (s.hits === s.targets && s.falseAlarms === 0) {
+      text = "<strong>Clean pass.</strong> Every executive event found, nothing over-labelled. " +
+             "Try the other story — the same eight functions appear in a different setting.";
+    } else if (s.falseAlarms > s.hits) {
+      text = "<strong>Over-labelling.</strong> You are finding executive functions in passages that " +
+             "are cognitive but belong to another system. Precision is " + precision + "%. " +
+             "Ask of each passage: is this <em>control</em>, or merely <em>processing</em>?";
+    } else if (s.misses > s.hits) {
+      text = "<strong>Under-labelling.</strong> Most executive events went unmarked. " +
+             "Look for passages where the character chooses, suppresses, reorders, or corrects.";
+    } else {
+      text = "<strong>Partial.</strong> " + s.hits + " of " + s.targets + " found, " +
+             s.falseAlarms + " false alarm" + (s.falseAlarms === 1 ? "" : "s") +
+             ". Precision is " + precision + "%. Review the definitions below each passage.";
+    }
+    return text;
+  }
+
+  function buildConfusionList(storyId) {
+    var assignments = state.assignments[storyId];
+    var rows = [];
+
+    segmentsOf(storyId).forEach(function (seg) {
+      var assigned = assignments[seg.id];
+      if (!assigned || assigned === seg.answer || seg.answer === "none") return;
+      if (!CONSTRUCTS[assigned]) return;
+      var a = CONSTRUCTS[assigned];
+      var b = CONSTRUCTS[seg.answer];
+      if (a.confusable.indexOf(seg.answer) === -1 && b.confusable.indexOf(assigned) === -1) return;
+      rows.push('<li><span class="pair">' + escapeHtml(a.label) + " → " + escapeHtml(b.label) + "</span><br>" +
+                escapeHtml(a.definition) + "<br><em>" + escapeHtml(b.definition) + "</em></li>");
+    });
+
+    return rows.length ? rows.join("") : "";
+  }
+
+  function updateTabProgress() {
+    ["kitchen", "theatre"].forEach(function (id) {
+      var el = document.querySelector('[data-progress="' + id + '"]');
+      if (!el) return;
+      var s = scoreStory(id);
+      var done = state.evaluated[id] || state.revealed[id];
+      el.textContent = done ? s.hits + "/" + s.targets : "";
+    });
+  }
+
+  /* ============================================================
+     EVENTS
+     ============================================================ */
+
+  document.addEventListener("click", function (e) {
+    if (!popover.classList.contains("open")) return;
+    if (popover.contains(e.target)) return;
+    if (e.target.closest && e.target.closest(".tag-trigger")) return;
+    closePopover();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closePopover(); return; }
+    if (!popover.classList.contains("open")) return;
+
+    var items = Array.prototype.slice.call(popover.querySelectorAll(".popover-item"));
+    var idx = items.indexOf(document.activeElement);
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      items[Math.min(idx + 1, items.length - 1)].focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      items[Math.max(idx - 1, 0)].focus();
+    }
+  });
+
+  storyEl.addEventListener("click", function (e) {
+    var trigger = e.target.closest(".tag-trigger");
+    if (!trigger) return;
+    e.stopPropagation();
+    if (popover.classList.contains("open") && activeTriggerId === trigger.dataset.id) {
+      closePopover();
+    } else {
+      closePopover();
+      openPopover(trigger);
+    }
+  });
+
+  document.querySelectorAll(".story-tab").forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      closePopover();
+      state.story = tab.dataset.story;
+      saveState();
+      renderStory();
+    });
+  });
+
+  document.getElementById("evaluateBtn").addEventListener("click", function () {
+    state.evaluated[state.story] = true;
+    state.revealed[state.story] = false;
+    saveState();
+    renderStory();
+    scorePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  document.getElementById("revealBtn").addEventListener("click", function () {
+    state.revealed[state.story] = true;
+    state.evaluated[state.story] = false;
+    saveState();
+    renderStory();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    state.assignments[state.story] = {};
+    state.evaluated[state.story] = false;
+    state.revealed[state.story] = false;
+    saveState();
+    closePopover();
+    renderStory();
+  });
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+
+  loadState();
+  renderStory();
+})();
+</script>
+</body>
+</html>
